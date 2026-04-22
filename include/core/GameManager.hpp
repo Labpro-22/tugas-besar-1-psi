@@ -27,6 +27,7 @@ private:
     void startAuction(PetakProperti* prop);
     void executePostRoll(Player& p, int roll1, int roll2, int& doublesCount, bool& endTurnFlag);
     void cetakAktaCommand();
+    void handleBangunCommand(const std::string& kode);
 
 public:
     GameManager();
