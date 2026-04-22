@@ -8,6 +8,7 @@
 #include <limits>
 #include <iomanip>
 #include <sstream>
+#include <map>
 #include "models/Street.hpp"
 #include "models/Railroad.hpp"
 #include "models/Utility.hpp"
@@ -179,6 +180,93 @@ void GameManager::cetakAktaCommand() {
     std::cout << "+================================+\n";
 }
 
+void GameManager::cetakPropertiCommand(const std::string& playerName) {
+    Player* targetPlayer = nullptr;
+    for (auto& pl : players) {
+        if (pl.getName() == playerName) {
+            targetPlayer = &pl;
+            break;
+        }
+    }
+
+    if (!targetPlayer) {
+        std::cout << "Pemain dengan nama \"" << playerName << "\" tidak ditemukan.\n";
+        return;
+    }
+
+    const auto& ownedProps = targetPlayer->getOwnedProperties();
+    if (ownedProps.empty()) {
+        std::cout << targetPlayer->getName() << " belum memiliki properti apapun.\n";
+        return;
+    }
+
+    std::cout << "\n> CETAK_PROPERTI " << playerName << "\n\n";
+    std::cout << "=== Properti Milik: " << targetPlayer->getName() << " ===\n\n";
+
+    std::vector<std::string> order = {
+        "COKLAT", "BIRU MUDA", "MERAH MUDA", "ORANGE", 
+        "MERAH", "KUNING", "HIJAU", "BIRU TUA", "STASIUN", "UTILITAS", "ABU-ABU", "LAINNYA"
+    };
+
+    std::map<std::string, std::vector<PetakProperti*>> groups;
+    int totalKekayaan = 0;
+
+    for (PetakProperti* prop : ownedProps) {
+        std::string groupName;
+        int propWealth = prop->getHargaBeli();
+
+        if (auto street = dynamic_cast<Street*>(prop)) {
+            std::string code = prop->getColorCode();
+            if (code == "CK") groupName = "COKLAT";
+            else if (code == "BM") groupName = "BIRU MUDA";
+            else if (code == "PK") groupName = "MERAH MUDA";
+            else if (code == "OR") groupName = "ORANGE";
+            else if (code == "MR") groupName = "MERAH";
+            else if (code == "KN") groupName = "KUNING";
+            else if (code == "HJ") groupName = "HIJAU";
+            else if (code == "BT") groupName = "BIRU TUA";
+            else groupName = "ABU-ABU";
+
+            propWealth += street->getTotalBuildingCost();
+        } else if (dynamic_cast<Railroad*>(prop)) {
+            groupName = "STASIUN";
+        } else if (dynamic_cast<Utility*>(prop)) {
+            groupName = "UTILITAS";
+        } else {
+            groupName = "LAINNYA";
+        }
+
+        groups[groupName].push_back(prop);
+        totalKekayaan += propWealth;
+    }
+
+    for (const std::string& gName : order) {
+        if (groups.find(gName) != groups.end()) {
+            std::cout << "[" << gName << "]\n";
+            for (PetakProperti* prop : groups[gName]) {
+                std::string fullName = prop->getName() + " (" + prop->getShortName() + ")";
+                
+                std::string bldStat = "";
+                if (auto street = dynamic_cast<Street*>(prop)) {
+                    if (street->getIsHotel()) {
+                        bldStat = "Hotel";
+                    } else if (street->getHouseCount() > 0) {
+                        bldStat = std::to_string(street->getHouseCount()) + " rumah";
+                    }
+                }
+
+                std::string status = prop->getIsMortgaged() ? "MORTGAGED [M]" : "OWNED";
+
+                std::cout << "- " << std::left << std::setw(26) << fullName;
+                std::cout << " " << std::left << std::setw(9) << bldStat;
+                std::cout << " " << std::left << std::setw(7) << formatUang(prop->getHargaBeli());
+                std::cout << " " << status << "\n";
+            }
+            std::cout << "\n";
+        }
+    }
+
+    std::cout << "Total kekayaan properti: " << formatUang(totalKekayaan) << "\n";
 void GameManager::handleBangunCommand(const std::string& kode) {
     Player& p = players[currentPlayerIndex];
 
@@ -289,7 +377,7 @@ void GameManager::executePostRoll(Player& p, int roll1, int roll2, int& doublesC
     std::cout << "Bidak mendarat di: " << currentSpace->getName() << ".\n\n";
 
     // Let the space execute its native injak logic (base functionality)
-    currentSpace->injak(p);
+    currentSpace->injak(p, rollTotal);
 
     // Core interactive logic
     if (auto prop = dynamic_cast<PetakProperti*>(currentSpace)) {
@@ -356,8 +444,7 @@ void GameManager::executePostRoll(Player& p, int roll1, int roll2, int& doublesC
                 std::cout << "Belum ada yang menginjaknya duluan, " << prop->getName() << " kini menjadi milikmu!\n";
             }
         } else if (prop->getOwner() != &p) {
-            // Pembayaran sewa sudah otomatis ditangani secara mandiri
-            // oleh currentSpace->injak(p) mengikuti prinsip Tell, Don't Ask!
+            // Pembayaran sewa sudah ditangani oleh currentSpace->injak(p, rollTotal)
         }
     } else if (auto aksi = dynamic_cast<PetakAksi*>(currentSpace)) {
         // Card Deck Integration
@@ -432,14 +519,24 @@ void GameManager::playTurn() {
         else if (action == "CETAK_AKTA") {
             cetakAktaCommand();
         }
+        else if (action == "CETAK_PROPERTI") {
+            std::string targetName;
+            std::getline(ss >> std::ws, targetName);
+            if (targetName.empty()) {
+                std::cout << "Format salah. Gunakan: CETAK_PROPERTI <NAMA_PLAYER>\n";
+            } else {
+                cetakPropertiCommand(targetName);
+            }
+        }
         else if (action == "HELP") {
             std::cout << "============= DAFTAR PERINTAH =============\n";
-            std::cout << "  CETAK_PAPAN      : Menampilkan peta/board\n";
-            std::cout << "  LEMPAR_DADU      : Melempar dadu acak (Bisa langsung Enter)\n";
-            std::cout << "  ATUR_DADU X Y    : Melempar dadu dengan nilai manual\n";
-            std::cout << "  CETAK_AKTA       : Melihat info properti (Misal: CETAK_AKTA JKT)\n";
+            std::cout << "  CETAK_PAPAN   : Menampilkan peta/board\n";
+            std::cout << "  LEMPAR_DADU   : Melempar dadu acak (Bisa langsung Enter)\n";
+            std::cout << "  ATUR_DADU X Y : Melempar dadu dengan nilai manual\n";
+            std::cout << "  CETAK_AKTA    : Melihat info properti (Misal: JKT)\n";
+            std::cout << "  CETAK_PROPERTI <NAMA> : Menampilkan properti milik pemain tertentu\n";
             std::cout << "  BANGUN <kode>    : Membangun rumah/hotel di Street milikmu (Misal: BANGUN JKT)\n";
-            std::cout << "  HELP             : Menampilkan daftar command yang tersedia\n";
+            std::cout << "  HELP          : Menampilkan (bantuan) daftar command yang tersedia\n";
             std::cout << "===========================================\n";
         }
         else if (action == "BANGUN") {

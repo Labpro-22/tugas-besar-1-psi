@@ -25,7 +25,7 @@ public:
 
     virtual int getSewa(int diceRoll = 0) const = 0;
     
-    void injak(Player& p) override;
+    void injak(Player& p, int diceRoll = 0) override;
 };
 
 #endif
