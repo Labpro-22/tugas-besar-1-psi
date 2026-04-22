@@ -20,7 +20,7 @@ std::vector<std::unique_ptr<Petak>> ConfigParser::loadBoardConfig(const std::str
     // 2. Isi terlebih dahulu petak-petak aksi (Action Tiles)
     setAksi(0, "GO", "GO", ActionType::GO, 200);
     setAksi(2, "Dana Umum", "DNU", ActionType::FREE_PARKING);
-    setAksi(4, "Pajak Penghasilan", "PPH", ActionType::TAX, 200);
+    setAksi(4, "Pajak Penghasilan", "PPH", ActionType::TAX, 150);
     setAksi(7, "Festival", "FES", ActionType::FREE_PARKING);
     setAksi(10, "Penjara", "PEN", ActionType::FREE_PARKING);
     setAksi(17, "Dana Umum", "DNU", ActionType::FREE_PARKING);
@@ -29,7 +29,7 @@ std::vector<std::unique_ptr<Petak>> ConfigParser::loadBoardConfig(const std::str
     setAksi(30, "Petak Pergi ke Penjara", "PPJ", ActionType::JAIL);
     setAksi(33, "Festival", "FES", ActionType::FREE_PARKING);
     setAksi(36, "Kesempatan", "KSP", ActionType::FREE_PARKING);
-    setAksi(38, "Pajak Barang Mewah", "PBM", ActionType::TAX, 200);
+    setAksi(38, "Pajak Barang Mewah", "PBM", ActionType::TAX, 150);
 
     // 3. Buka file property.txt
     std::ifstream file(filename);

@@ -21,7 +21,7 @@ public:
     ActionType getType() const;
     int getAmount() const;
 
-    void injak(Player& p) override;
+    void injak(Player& p, int diceRoll = 0) override;
 };
 
 #endif
