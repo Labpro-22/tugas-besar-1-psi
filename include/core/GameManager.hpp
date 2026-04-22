@@ -28,7 +28,7 @@ private:
     void executePostRoll(Player& p, int roll1, int roll2, int& doublesCount, bool& endTurnFlag);
     void cetakAktaCommand();
     void cetakPropertiCommand(const std::string& playerName);
-    void handleBangunCommand(const std::string& kode);
+    void handleBangunCommand();
 
 public:
     GameManager();

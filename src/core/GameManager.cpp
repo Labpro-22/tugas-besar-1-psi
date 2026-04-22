@@ -56,6 +56,30 @@ namespace {
         }
         return true;
     }
+
+    bool canUpgradeAnyToHotel(const std::vector<Street*>& streets) {
+        bool hasNonHotel = false;
+        for (auto s : streets) {
+            if (!s->getIsHotel()) {
+                hasNonHotel = true;
+                if (s->getHouseCount() < 4) return false;
+            }
+        }
+        return hasNonHotel;
+    }
+
+    std::string colorCodeToFullName(const std::string& code) {
+        if (code == "CK") return "COKLAT";
+        if (code == "BM") return "BIRU MUDA";
+        if (code == "PK") return "MERAH MUDA";
+        if (code == "OR") return "ORANGE";
+        if (code == "MR") return "MERAH";
+        if (code == "KN") return "KUNING";
+        if (code == "HJ") return "HIJAU";
+        if (code == "BT") return "BIRU TUA";
+        if (code == "AB") return "ABU-ABU";
+        return code;
+    }
 }
 
 static std::string formatUang(int amount) {
@@ -267,68 +291,141 @@ void GameManager::cetakPropertiCommand(const std::string& playerName) {
     }
 
     std::cout << "Total kekayaan properti: " << formatUang(totalKekayaan) << "\n";
-void GameManager::handleBangunCommand(const std::string& kode) {
+}
+
+void GameManager::handleBangunCommand() {
     Player& p = players[currentPlayerIndex];
 
-    Street* target = nullptr;
+    // Kumpulkan color group yang pemain punya monopoli (urutan sesuai board)
+    std::vector<std::string> groupOrder;
+    std::map<std::string, std::vector<Street*>> monopolyGroups;
     for (const auto& petak : board) {
         if (auto s = dynamic_cast<Street*>(petak.get())) {
-            if (s->getShortName() == kode) { target = s; break; }
+            const std::string& cg = s->getColorGroup();
+            if (monopolyGroups.count(cg)) continue;
+            auto groupStreets = getStreetsInGroup(board, cg);
+            if (playerHasMonopoly(&p, groupStreets)) {
+                monopolyGroups[cg] = groupStreets;
+                groupOrder.push_back(cg);
+            }
         }
     }
 
-    if (!target) {
-        std::cout << "[!] Petak \"" << kode << "\" tidak ditemukan atau bukan Street.\n";
-        return;
-    }
-    if (target->getOwner() != &p) {
-        std::cout << "[!] Kamu tidak memiliki petak ini.\n";
-        return;
-    }
-    if (target->getIsMortgaged()) {
-        std::cout << "[!] Petak ini sedang digadai, tidak bisa dibangun.\n";
+    if (monopolyGroups.empty()) {
+        std::cout << "Tidak ada color group yang memenuhi syarat untuk dibangun.\n";
+        std::cout << "Kamu harus memiliki seluruh petak dalam satu color group terlebih dahulu.\n";
         return;
     }
 
-    auto groupStreets = getStreetsInGroup(board, target->getColorGroup());
-    if (!playerHasMonopoly(&p, groupStreets)) {
-        std::cout << "[!] Kamu belum memiliki monopoli di grup " << target->getColorGroup() << ".\n";
-        return;
-    }
-    for (auto s : groupStreets) {
-        if (s->getIsMortgaged()) {
-            std::cout << "[!] Ada petak di grup yang digadai (" << s->getName() << "). Tidak bisa membangun.\n";
-            return;
+    // Step 1: Tampilkan semua group yang memenuhi syarat
+    std::cout << "=== Color Group yang Memenuhi Syarat ===\n";
+    for (int gi = 0; gi < (int)groupOrder.size(); gi++) {
+        const std::string& cg = groupOrder[gi];
+        std::cout << (gi + 1) << ". [" << colorCodeToFullName(cg) << "]\n";
+        for (auto s : monopolyGroups[cg]) {
+            std::string statusStr;
+            if (s->getIsHotel()) statusStr = "Hotel";
+            else statusStr = std::to_string(s->getHouseCount()) + " rumah (Harga rumah: " + formatUang(s->getHousePrice()) + ")";
+            std::string nameKode = s->getName() + " (" + s->getShortName() + ")";
+            std::cout << "   - " << std::left << std::setw(30) << nameKode << ": " << statusStr << "\n";
         }
     }
+
+    std::cout << "\nUang kamu saat ini : " << formatUang(p.getMoney()) << "\n";
+    std::cout << "Pilih nomor color group (0 untuk batal): ";
+    std::string input;
+    std::getline(std::cin, input);
+    int groupChoice = 0;
+    try { groupChoice = std::stoi(input); } catch (...) {}
+    if (groupChoice <= 0 || groupChoice > (int)groupOrder.size()) {
+        std::cout << "Dibatalkan.\n";
+        return;
+    }
+
+    const std::string& selectedCode = groupOrder[groupChoice - 1];
+    std::string selectedFullName = colorCodeToFullName(selectedCode);
+    auto& groupStreets = monopolyGroups[selectedCode];
+
+    bool hotelReady = canUpgradeAnyToHotel(groupStreets);
+    bool allFour    = allHaveFourHouses(groupStreets);
+    int  minCount   = getMinHouseCount(groupStreets);
+
+    // Step 2: Tampilkan petak dalam group yang dipilih
+    std::cout << "\nColor group [" << selectedFullName << "]:\n";
+    for (int si = 0; si < (int)groupStreets.size(); si++) {
+        auto s = groupStreets[si];
+        std::string nameKode = s->getName() + " (" + s->getShortName() + ")";
+        std::string statusStr, annotation;
+
+        if (s->getIsHotel()) {
+            statusStr  = "Hotel";
+            annotation = "<- sudah maksimal, tidak dapat dibangun";
+        } else if (s->getHouseCount() == 4 && hotelReady) {
+            statusStr  = "4 rumah";
+            annotation = "<- siap upgrade ke hotel";
+        } else if (s->getHouseCount() == 4) {
+            statusStr  = "4 rumah";
+            annotation = "(menunggu petak lain)";
+        } else if (s->getHouseCount() == minCount) {
+            statusStr  = std::to_string(s->getHouseCount()) + " rumah";
+            annotation = "<- dapat dibangun";
+        } else {
+            statusStr  = std::to_string(s->getHouseCount()) + " rumah";
+            annotation = "(menunggu petak lain)";
+        }
+        std::cout << "- " << std::left << std::setw(30) << nameKode
+                  << ": " << std::left << std::setw(8) << statusStr
+                  << " " << annotation << "\n";
+    }
+
+    if (allFour) {
+        std::cout << "\nSeluruh color group [" << selectedFullName
+                  << "] sudah memiliki 4 rumah. Siap di-upgrade ke hotel!\n";
+    }
+
+    std::cout << "Pilih petak (0 untuk batal): ";
+    std::getline(std::cin, input);
+    int streetChoice = 0;
+    try { streetChoice = std::stoi(input); } catch (...) {}
+    if (streetChoice <= 0 || streetChoice > (int)groupStreets.size()) {
+        std::cout << "Dibatalkan.\n";
+        return;
+    }
+
+    Street* target = groupStreets[streetChoice - 1];
 
     if (target->getIsHotel()) {
         std::cout << "[!] " << target->getName() << " sudah memiliki hotel.\n";
         return;
     }
 
+    // Hotel upgrade
     if (target->getHouseCount() == 4) {
-        if (!allHaveFourHouses(groupStreets)) {
+        if (!hotelReady) {
             std::cout << "[!] Semua petak di grup harus memiliki 4 rumah sebelum bisa upgrade ke hotel.\n";
             return;
         }
         int cost = target->getHotelPrice();
+        std::cout << "Upgrade ke hotel? Biaya: " << formatUang(cost) << " (y/n): ";
+        std::getline(std::cin, input);
+        if (input != "y" && input != "Y") { std::cout << "Dibatalkan.\n"; return; }
         if (p.getMoney() < cost) {
             std::cout << "[!] Uang tidak cukup untuk hotel (butuh " << formatUang(cost) << ").\n";
             return;
         }
         p.reduceMoney(cost);
         target->upgradeToHotel();
-        std::cout << "Hotel berhasil dibangun di " << target->getName() << "! Uang tersisa: " << formatUang(p.getMoney()) << "\n";
+        std::cout << target->getName() << " di-upgrade ke Hotel!\n";
+        std::cout << "Uang tersisa: " << formatUang(p.getMoney()) << "\n";
         return;
     }
 
-    int minCount = getMinHouseCount(groupStreets);
+    // Bangun rumah
     if (target->getHouseCount() > minCount) {
-        std::cout << "[!] Pembangunan harus merata. Bangun di petak lain yang masih memiliki " << minCount << " rumah.\n";
+        std::cout << "[!] Pembangunan harus merata. Bangun di petak lain yang masih memiliki "
+                  << minCount << " rumah.\n";
         return;
     }
-
     int cost = target->getHousePrice();
     if (p.getMoney() < cost) {
         std::cout << "[!] Uang tidak cukup untuk rumah (butuh " << formatUang(cost) << ").\n";
@@ -336,8 +433,16 @@ void GameManager::handleBangunCommand(const std::string& kode) {
     }
     p.reduceMoney(cost);
     target->buildHouse();
-    std::cout << "Rumah ke-" << target->getHouseCount() << " berhasil dibangun di " << target->getName()
-              << "! Uang tersisa: " << formatUang(p.getMoney()) << "\n";
+    std::cout << "Kamu membangun 1 rumah di " << target->getName()
+              << ". Biaya: " << formatUang(cost) << "\n";
+    std::cout << "Uang tersisa: " << formatUang(p.getMoney()) << "\n";
+
+    // Tampilkan status terkini seluruh group
+    for (auto s : groupStreets) {
+        std::string statusStr = s->getIsHotel() ? "Hotel" : std::to_string(s->getHouseCount()) + " rumah";
+        std::string nameKode  = s->getName() + " (" + s->getShortName() + ")";
+        std::cout << "- " << std::left << std::setw(30) << nameKode << ": " << statusStr << "\n";
+    }
 }
 
 void GameManager::executePostRoll(Player& p, int roll1, int roll2, int& doublesCount, bool& endTurnFlag) {
@@ -535,22 +640,16 @@ void GameManager::playTurn() {
             std::cout << "  ATUR_DADU X Y : Melempar dadu dengan nilai manual\n";
             std::cout << "  CETAK_AKTA    : Melihat info properti (Misal: JKT)\n";
             std::cout << "  CETAK_PROPERTI <NAMA> : Menampilkan properti milik pemain tertentu\n";
-            std::cout << "  BANGUN <kode>    : Membangun rumah/hotel di Street milikmu (Misal: BANGUN JKT)\n";
+            std::cout << "  BANGUN           : Membangun rumah/hotel di Street milikmu (menu interaktif)\n";
             std::cout << "  HELP          : Menampilkan (bantuan) daftar command yang tersedia\n";
             std::cout << "===========================================\n";
         }
         else if (action == "BANGUN") {
-            std::string kode;
-            ss >> kode;
-            if (kode.empty()) {
-                std::cout << "[!] Format: BANGUN <kode_petak> (Contoh: BANGUN JKT)\n";
-            } else {
-                handleBangunCommand(kode);
-            }
+            handleBangunCommand();
         }
         else if (action == "ATUR_DADU") {
             int x, y;
-            if (ss >> x >> y && x > 0 && y > 0) {
+            if (ss >> x >> y && x > 0 && y > 0 && x <= 6 && y <= 6) {
                 std::cout << "Dadu diatur secara manual.\n";
                 executePostRoll(p, x, y, doublesCount, endTurnFlag);
             } else {
