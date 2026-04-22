@@ -25,6 +25,8 @@ private:
 
     // Helper method for handling declined properties
     void startAuction(PetakProperti* prop);
+    void executePostRoll(Player& p, int roll1, int roll2, int& doublesCount, bool& endTurnFlag);
+    void cetakAktaCommand();
 
 public:
     GameManager();

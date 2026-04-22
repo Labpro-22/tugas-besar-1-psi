@@ -4,7 +4,7 @@
 int main() {
     GameManager game;
 
-    game.loadConfig("config/board_data.csv");
+    game.loadConfig("data/property.txt");
 
     int numPlayers;
     std::cout << "\nEnter number of players (e.g. 2): ";

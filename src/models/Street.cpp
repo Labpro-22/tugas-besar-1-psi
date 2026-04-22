@@ -11,6 +11,7 @@ Street::Street(int id, const std::string& name, const std::string& colorGroup,
 std::string Street::getColorGroup() const { return colorGroup; }
 int Street::getHouseCount() const { return houseCount; }
 bool Street::getIsHotel() const { return isHotelBuilt; }
+const std::vector<int>& Street::getRentPrices() const { return rentPrices; }
 
 bool Street::canBuildHouse() const {
     return !isHotelBuilt && houseCount < 4;
