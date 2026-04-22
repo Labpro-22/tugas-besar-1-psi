@@ -22,6 +22,7 @@ public:
     std::string getColorGroup() const;
     int getHouseCount() const;
     bool getIsHotel() const;
+    const std::vector<int>& getRentPrices() const;
 
     bool canBuildHouse() const;
     bool canUpgradeToHotel() const;
