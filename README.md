@@ -46,7 +46,7 @@ Atau jika ingin mengeksekusi biner utamanya secara manual:
 
 ---
 
-## 🕹️ Daftar Perintah CLI (Command List)
+## 🕹️ Daftar Perintah CLI (Command List) [SEMENTARA]
 
 Saat permainan dimulai, Anda akan diminta untuk memasukkan jumlah pemain dan nama setiap pemain. Selama giliran aktif (selama Anda belum menyentuh kondisi *End Turn*), Anda bebas mengeksekusi berbagai instruksi ini:
 
