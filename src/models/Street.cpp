@@ -1,22 +1,51 @@
 #include "models/Street.hpp"
 
-Street::Street(int id, const std::string& name, int hargaBeli, const std::vector<int>& rentPrices, int housePrice)
-    : PetakProperti(id, name, hargaBeli), rentPrices(rentPrices), houseCount(0), housePrice(housePrice) {}
+Street::Street(int id, const std::string& name, const std::string& colorGroup,
+               int hargaBeli, const std::vector<int>& rentPrices,
+               int housePrice, int hotelPrice)
+    : PetakProperti(id, name, hargaBeli),
+      colorGroup(colorGroup), rentPrices(rentPrices),
+      houseCount(0), isHotelBuilt(false),
+      housePrice(housePrice), hotelPrice(hotelPrice) {}
 
+std::string Street::getColorGroup() const { return colorGroup; }
 int Street::getHouseCount() const { return houseCount; }
+bool Street::getIsHotel() const { return isHotelBuilt; }
 
-void Street::addHouse() {
-    if (houseCount < 5) houseCount++; // Max 5 houses (where 5 = hotel)
+bool Street::canBuildHouse() const {
+    return !isHotelBuilt && houseCount < 4;
+}
+
+bool Street::canUpgradeToHotel() const {
+    return !isHotelBuilt && houseCount == 4;
+}
+
+void Street::buildHouse() {
+    if (canBuildHouse()) houseCount++;
+}
+
+void Street::upgradeToHotel() {
+    if (canUpgradeToHotel()) isHotelBuilt = true;
+}
+
+void Street::demolishAllBuildings() {
+    houseCount = 0;
+    isHotelBuilt = false;
 }
 
 int Street::getHousePrice() const { return housePrice; }
+int Street::getHotelPrice() const { return hotelPrice; }
+
+int Street::getTotalBuildingCost() const {
+    if (isHotelBuilt) return 4 * housePrice + hotelPrice;
+    return houseCount * housePrice;
+}
 
 int Street::getSewa(int /*diceRoll*/) const {
     if (isMortgaged) return 0;
-    
-    // rentPrices should map: 0->base, 1->1 house, ..., 5->hotel
-    if (houseCount >= 0 && houseCount < static_cast<int>(rentPrices.size())) {
-        return rentPrices[houseCount];
+    int level = isHotelBuilt ? 5 : houseCount;
+    if (level >= 0 && level < static_cast<int>(rentPrices.size())) {
+        return rentPrices[level];
     }
     return 0;
 }

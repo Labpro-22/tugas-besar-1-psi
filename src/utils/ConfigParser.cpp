@@ -67,7 +67,7 @@ std::vector<std::unique_ptr<Petak>> ConfigParser::loadBoardConfig(const std::str
             auto t = layout[i];
             
             if (t.type == 0) p = std::make_unique<PetakAksi>(t.id, t.name, ActionType::GO, 200);
-            else if (t.type == 1) p = std::make_unique<Street>(t.id, t.name, 100 + i*10, std::vector<int>{10+i, 40+i*2, 100+i*3, 300+i*4, 500+i*5, 800+i*6}, 50);
+            else if (t.type == 1) p = std::make_unique<Street>(t.id, t.name, t.color, 100 + i*10, std::vector<int>{10+i, 40+i*2, 100+i*3, 300+i*4, 500+i*5, 800+i*6}, 50, 50);
             else if (t.type == 2) p = std::make_unique<PetakAksi>(t.id, t.name, ActionType::FREE_PARKING);
             else if (t.type == 3) p = std::make_unique<PetakAksi>(t.id, t.name, ActionType::TAX, 200);
             else if (t.type == 4) p = std::make_unique<Railroad>(t.id, t.name, 200, 25);
@@ -99,17 +99,20 @@ std::vector<std::unique_ptr<Petak>> ConfigParser::loadBoardConfig(const std::str
         std::unique_ptr<Petak> p;
         
         if (typeStr == "Street") {
-            std::string rentBaseStr, housePriceStr;
+            std::string colorGroupStr, rentBaseStr, housePriceStr, hotelPriceStr;
+            std::getline(ss, colorGroupStr, ',');
             std::getline(ss, currStr, ',');
             std::getline(ss, rentBaseStr, ',');
             std::getline(ss, housePriceStr, ',');
+            std::getline(ss, hotelPriceStr, ',');
 
             int hargaBeli = std::stoi(currStr);
             int baseRent = std::stoi(rentBaseStr);
             int housePrice = std::stoi(housePriceStr);
-            
+            int hotelPrice = hotelPriceStr.empty() ? housePrice : std::stoi(hotelPriceStr);
+
             std::vector<int> rentPrices = {baseRent, baseRent*5, baseRent*15, baseRent*40, baseRent*70, baseRent*100};
-            p = std::make_unique<Street>(id, name, hargaBeli, rentPrices, housePrice);
+            p = std::make_unique<Street>(id, name, colorGroupStr, hargaBeli, rentPrices, housePrice, hotelPrice);
         } else if (typeStr == "Railroad") {
             std::getline(ss, currStr, ',');
             p = std::make_unique<Railroad>(id, name, std::stoi(currStr), 25);
