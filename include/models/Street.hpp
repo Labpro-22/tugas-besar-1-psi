@@ -13,6 +13,8 @@ private:
     bool isHotelBuilt;
     int housePrice;
     int hotelPrice;
+    int festivalMultiplier; // 1, 2, 4, or 8 (1 = inactive)
+    int festivalDuration;   // 0–3 turns remaining
 
 public:
     Street(int id, const std::string& name, const std::string& colorGroup,
@@ -33,6 +35,13 @@ public:
     int getHousePrice() const;
     int getHotelPrice() const;
     int getTotalBuildingCost() const;
+
+    int getFestivalMultiplier() const;
+    int getFestivalDuration() const;
+    void activateFestival();
+    void decrementFestival();
+    void setFestivalState(int mult, int dur);
+    void restoreBuildingState(int houses, bool hotel);
 
     int getSewa(int diceRoll = 0) const override;
 };

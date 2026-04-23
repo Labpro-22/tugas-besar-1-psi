@@ -16,8 +16,9 @@
 #include <stdexcept>
 #include <algorithm>
 
-GameManager::GameManager() 
-    : chanceDeck("Chance"), chestDeck("Community Chest"), currentPlayerIndex(0), turnCount(1), hasDoneAction(false) {
+GameManager::GameManager()
+    : chanceDeck("Chance"), chestDeck("Community Chest"),
+      currentPlayerIndex(0), turnCount(1), maxTurn(-1), hasDoneAction(false) {
     chanceDeck.addCard(Card("Advance to GO (Collect 200)", CardEffectType::MOVE_TO, 0));
     chanceDeck.addCard(Card("Bank pays you dividend of 50", CardEffectType::ADD_MONEY, 50));
     chestDeck.addCard(Card("Doctor's fee. Pay 50", CardEffectType::DEDUCT_MONEY, 50));
@@ -841,8 +842,15 @@ void GameManager::playTurn() {
 
     hasDoneAction = false;
 
+    // Decrement festival duration for owned Streets at start of each turn
+    for (auto* prop : p.getOwnedProperties()) {
+        if (auto* street = dynamic_cast<Street*>(prop)) {
+            street->decrementFestival();
+        }
+    }
+
     std::cout << "\n---------------------------------------------\n";
-    std::cout << "Turn " << turnCount << " | Player: " << p.getName() 
+    std::cout << "Turn " << turnCount << " | Player: " << p.getName()
               << " | Balancing: $" << p.getMoney() << "\n";
     std::cout << "---------------------------------------------\n";
 
@@ -977,4 +985,8 @@ void GameManager::startGame() {
         
         nextTurn();
     }
+}
+
+bool GameManager::loadGame(const std::string& filename) {
+    return SaveManager::loadGame(*this, filename);
 }

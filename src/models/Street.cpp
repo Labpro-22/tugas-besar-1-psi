@@ -6,7 +6,8 @@ Street::Street(int id, const std::string& name, const std::string& colorGroup,
     : PetakProperti(id, name, hargaBeli),
       colorGroup(colorGroup), rentPrices(rentPrices),
       houseCount(0), isHotelBuilt(false),
-      housePrice(housePrice), hotelPrice(hotelPrice) {}
+      housePrice(housePrice), hotelPrice(hotelPrice),
+      festivalMultiplier(1), festivalDuration(0) {}
 
 std::string Street::getColorGroup() const { return colorGroup; }
 int Street::getHouseCount() const { return houseCount; }
@@ -42,11 +43,35 @@ int Street::getTotalBuildingCost() const {
     return houseCount * housePrice;
 }
 
+int Street::getFestivalMultiplier() const { return festivalMultiplier; }
+int Street::getFestivalDuration() const   { return festivalDuration; }
+
+void Street::activateFestival() {
+    if (festivalMultiplier < 8) festivalMultiplier *= 2;
+    festivalDuration = 3;
+}
+
+void Street::decrementFestival() {
+    if (festivalDuration > 0) {
+        festivalDuration--;
+        if (festivalDuration == 0) festivalMultiplier = 1;
+    }
+}
+
+void Street::setFestivalState(int mult, int dur) {
+    festivalMultiplier = mult;
+    festivalDuration   = dur;
+}
+
+void Street::restoreBuildingState(int houses, bool hotel) {
+    houseCount    = houses;
+    isHotelBuilt  = hotel;
+}
+
 int Street::getSewa(int /*diceRoll*/) const {
     if (isMortgaged) return 0;
     int level = isHotelBuilt ? 5 : houseCount;
-    if (level >= 0 && level < static_cast<int>(rentPrices.size())) {
-        return rentPrices[level];
-    }
-    return 0;
+    int base  = (level >= 0 && level < static_cast<int>(rentPrices.size()))
+                ? rentPrices[level] : 0;
+    return base * festivalMultiplier;
 }

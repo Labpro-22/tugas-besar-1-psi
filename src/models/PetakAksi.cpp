@@ -118,5 +118,65 @@ void PetakAksi::injak(Player& p, int /*diceRoll*/) {
         }
         case ActionType::FREE_PARKING:
             break;
+
+        case ActionType::FESTIVAL: {
+            std::cout << "Kamu mendarat di petak Festival!\n";
+
+            std::vector<Street*> ownedStreets;
+            for (auto* prop : p.getOwnedProperties()) {
+                if (auto* s = dynamic_cast<Street*>(prop)) {
+                    ownedStreets.push_back(s);
+                }
+            }
+
+            if (ownedStreets.empty()) {
+                std::cout << "Kamu tidak memiliki properti Street. Efek Festival tidak dapat digunakan.\n";
+                break;
+            }
+
+            std::cout << "\nDaftar properti milikmu:\n";
+            for (auto* s : ownedStreets) {
+                std::cout << "- " << s->getShortName() << " (" << s->getName() << ")\n";
+            }
+
+            while (true) {
+                std::cout << "Masukkan kode properti: ";
+                std::string kode;
+                std::getline(std::cin, kode);
+
+                Street* chosen = nullptr;
+                for (auto* s : ownedStreets) {
+                    if (s->getShortName() == kode) { chosen = s; break; }
+                }
+
+                if (!chosen) {
+                    std::cout << "-> Kode properti tidak valid atau bukan milikmu!\n";
+                    continue;
+                }
+
+                int prevMult = chosen->getFestivalMultiplier();
+                int prevSewa = chosen->getSewa();
+                chosen->activateFestival();
+                int newSewa = chosen->getSewa();
+                int newMult = chosen->getFestivalMultiplier();
+
+                if (prevMult == 1) {
+                    std::cout << "\nEfek festival aktif!\n";
+                    std::cout << "Sewa awal    : " << formatUangLocal(prevSewa) << "\n";
+                    std::cout << "Sewa sekarang: " << formatUangLocal(newSewa) << "\n";
+                    std::cout << "Durasi: 3 giliran\n";
+                } else if (newMult > prevMult) {
+                    std::cout << "\nEfek diperkuat!\n";
+                    std::cout << "Sewa sebelumnya: " << formatUangLocal(prevSewa) << "\n";
+                    std::cout << "Sewa sekarang  : " << formatUangLocal(newSewa) << "\n";
+                    std::cout << "Durasi di-reset menjadi: 3 giliran\n";
+                } else {
+                    std::cout << "\nEfek sudah maksimum (harga sewa sudah digandakan tiga kali)\n";
+                    std::cout << "Durasi di-reset menjadi: 3 giliran\n";
+                }
+                break;
+            }
+            break;
+        }
     }
 }

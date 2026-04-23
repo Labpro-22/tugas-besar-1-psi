@@ -7,7 +7,8 @@ enum class ActionType {
     GO,
     JAIL,
     TAX,
-    FREE_PARKING
+    FREE_PARKING,
+    FESTIVAL
 };
 
 class PetakAksi : public Petak {

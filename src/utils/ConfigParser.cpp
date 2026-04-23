@@ -17,19 +17,53 @@ std::vector<std::unique_ptr<Petak>> ConfigParser::loadBoardConfig(const std::str
         board[index]->setSkin(kode, "DF");
     };
 
-    // 2. Isi terlebih dahulu petak-petak aksi (Action Tiles)
-    setAksi(0, "GO", "GO", ActionType::GO, 200);
-    setAksi(2, "Dana Umum", "DNU", ActionType::FREE_PARKING);
-    setAksi(4, "Pajak Penghasilan", "PPH", ActionType::TAX, 150);
-    setAksi(7, "Festival", "FES", ActionType::FREE_PARKING);
-    setAksi(10, "Penjara", "PEN", ActionType::FREE_PARKING);
-    setAksi(17, "Dana Umum", "DNU", ActionType::FREE_PARKING);
-    setAksi(20, "Bebas Parkir", "BBP", ActionType::FREE_PARKING);
-    setAksi(22, "Kesempatan", "KSP", ActionType::FREE_PARKING);
-    setAksi(30, "Petak Pergi ke Penjara", "PPJ", ActionType::JAIL);
-    setAksi(33, "Festival", "FES", ActionType::FREE_PARKING);
-    setAksi(36, "Kesempatan", "KSP", ActionType::FREE_PARKING);
-    setAksi(38, "Pajak Barang Mewah", "PBM", ActionType::TAX, 150);
+    // 2. Baca aksi.txt (Revisi 2: konfigurasi petak aksi dari file)
+    std::string dataDir = filename.substr(0, filename.rfind('/') + 1);
+    std::ifstream aksiFile(dataDir + "aksi.txt");
+    if (aksiFile.is_open()) {
+        std::string line;
+        std::getline(aksiFile, line); // skip header
+        while (std::getline(aksiFile, line)) {
+            if (line.empty() || line[0] == '#') continue;
+            std::stringstream ss(line);
+            int id;
+            std::string kode, nama, jenis, warna;
+            if (!(ss >> id >> kode >> nama >> jenis >> warna)) continue;
+            if (id < 1 || id > 40) continue;
+            int index = id - 1;
+
+            ActionType type  = ActionType::FREE_PARKING;
+            int        amount = 0;
+
+            if (jenis == "SPESIAL") {
+                if (kode == "GO")  { type = ActionType::GO;   amount = 200; }
+                else if (kode == "PPJ") type = ActionType::JAIL;
+                // PEN, BBP → FREE_PARKING (default)
+            } else if (jenis == "PAJAK") {
+                type = ActionType::TAX;
+                amount = (kode == "PPH") ? 150 : 200; // PPH flat=150, PBM flat=200
+            } else if (jenis == "FESTIVAL") {
+                type = ActionType::FESTIVAL;
+            }
+            // KARTU → FREE_PARKING (handled by name matching in GameManager)
+
+            setAksi(index, nama, kode, type, amount);
+        }
+    } else {
+        // Fallback jika aksi.txt tidak ditemukan
+        setAksi(0,  "GO",                    "GO",  ActionType::GO,       200);
+        setAksi(2,  "Dana_Umum",             "DNU", ActionType::FREE_PARKING);
+        setAksi(4,  "Pajak_Penghasilan",     "PPH", ActionType::TAX,      150);
+        setAksi(7,  "Festival",              "FES", ActionType::FESTIVAL);
+        setAksi(10, "Penjara",               "PEN", ActionType::FREE_PARKING);
+        setAksi(17, "Dana_Umum",             "DNU", ActionType::FREE_PARKING);
+        setAksi(20, "Bebas_Parkir",          "BBP", ActionType::FREE_PARKING);
+        setAksi(22, "Kesempatan",            "KSP", ActionType::FREE_PARKING);
+        setAksi(30, "Petak_Pergi_ke_Penjara","PPJ", ActionType::JAIL);
+        setAksi(33, "Festival",              "FES", ActionType::FESTIVAL);
+        setAksi(36, "Kesempatan",            "KSP", ActionType::FREE_PARKING);
+        setAksi(38, "Pajak_Barang_Mewah",   "PBM", ActionType::TAX,      200);
+    }
 
     // 3. Buka file property.txt
     std::ifstream file(filename);
