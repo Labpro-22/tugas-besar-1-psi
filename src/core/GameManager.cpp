@@ -12,9 +12,12 @@
 #include "models/Street.hpp"
 #include "models/Railroad.hpp"
 #include "models/Utility.hpp"
+#include "utils/SaveManager.hpp"
+#include <stdexcept>
+#include <algorithm>
 
 GameManager::GameManager() 
-    : chanceDeck("Chance"), chestDeck("Community Chest"), currentPlayerIndex(0), turnCount(1) {
+    : chanceDeck("Chance"), chestDeck("Community Chest"), currentPlayerIndex(0), turnCount(1), hasDoneAction(false) {
     chanceDeck.addCard(Card("Advance to GO (Collect 200)", CardEffectType::MOVE_TO, 0));
     chanceDeck.addCard(Card("Bank pays you dividend of 50", CardEffectType::ADD_MONEY, 50));
     chestDeck.addCard(Card("Doctor's fee. Pay 50", CardEffectType::DEDUCT_MONEY, 50));
@@ -112,9 +115,77 @@ void GameManager::initPlayers(int numPlayers) {
     }
 }
 
-void GameManager::startAuction(PetakProperti* prop) {
-    std::cout << "[AUCTION] Starting auction for " << prop->getName() << "... (Dummy Text)\n";
-    // Real auction logic will be implemented here later
+void GameManager::startAuction(PetakProperti* prop, Player* initiator) {
+    std::cout << "\nProperti " << prop->getName() << " (" << prop->getShortName() << ") akan dilelang!\n";
+    std::cout << "Urutan lelang dimulai dari pemain setelah " << initiator->getName() << ".\n\n";
+
+    std::vector<Player*> activeBidders;
+    int initiatorIdx = -1;
+    for (size_t i = 0; i < players.size(); i++) {
+        if (players[i].getStatus() != PlayerStatus::BANKRUPT) {
+            activeBidders.push_back(&players[i]);
+            if (&players[i] == initiator) initiatorIdx = (int)activeBidders.size() - 1;
+        }
+    }
+
+    if (activeBidders.empty()) return;
+
+    int currentBidderIdx = (initiatorIdx + 1) % activeBidders.size();
+    int highestBid = 0;
+    Player* highestBidder = nullptr;
+    int consecutivePass = 0;
+
+    while (activeBidders.size() > 1 && consecutivePass < (int)activeBidders.size()) {
+        Player* currentP = activeBidders[currentBidderIdx];
+
+        std::cout << "Giliran: " << currentP->getName() << "\n";
+        std::cout << "Aksi (PASS / BID <jumlah>):\n> ";
+        std::string input;
+        std::getline(std::cin, input);
+
+        std::stringstream ss(input);
+        std::string action;
+        ss >> action;
+
+        if (action == "BID") {
+            int amount;
+            if (ss >> amount) {
+                if (amount > currentP->getMoney()) {
+                    std::cout << "Uang tidak cukup untuk BID!\n\n";
+                    continue;
+                }
+                if (amount <= highestBid) {
+                    std::cout << "BID harus lebih besar dari penawaran tertinggi (" << formatUang(highestBid) << ")!\n\n";
+                    continue;
+                }
+                highestBid = amount;
+                highestBidder = currentP;
+                consecutivePass = 0;
+                std::cout << "Penawaran tertinggi: " << formatUang(highestBid) << " (" << highestBidder->getName() << ")\n\n";
+            } else {
+                std::cout << "Format BID salah!\n\n";
+                continue;
+            }
+        } else {
+            std::cout << currentP->getName() << " PASS.\n\n";
+            consecutivePass++;
+        }
+
+        currentBidderIdx = (currentBidderIdx + 1) % activeBidders.size();
+    }
+
+    std::cout << "Lelang selesai!\n";
+    if (highestBidder) {
+        std::cout << "Pemenang: " << highestBidder->getName() << "\n";
+        std::cout << "Harga akhir: " << formatUang(highestBid) << "\n";
+        std::cout << "Properti " << prop->getName() << " (" << prop->getShortName() << ") kini dimiliki " << highestBidder->getName() << ".\n";
+        
+        highestBidder->reduceMoney(highestBid);
+        prop->setOwner(highestBidder);
+        highestBidder->addProperty(prop);
+    } else {
+        std::cout << "Tidak ada yang menawar. Properti tetap tidak dimiliki.\n";
+    }
 }
 
 void GameManager::cetakAktaCommand() {
@@ -445,6 +516,178 @@ void GameManager::handleBangunCommand() {
     }
 }
 
+void GameManager::handleGadaiCommand() {
+    Player& p = players[currentPlayerIndex];
+    const auto& props = p.getOwnedProperties();
+    std::vector<PetakProperti*> gadaiable;
+    
+    for (auto prop : props) {
+        if (!prop->getIsMortgaged()) {
+            gadaiable.push_back(prop);
+        }
+    }
+
+    if (gadaiable.empty()) {
+        std::cout << "Kamu tidak memiliki properti yang dapat digadaikan.\n";
+        return;
+    }
+
+    std::cout << "=== Properti yang Dapat Digadaikan ===\n";
+    for (size_t i = 0; i < gadaiable.size(); i++) {
+        PetakProperti* prop = gadaiable[i];
+        std::string nameKode = prop->getName() + " (" + prop->getShortName() + ")";
+        
+        std::string groupName = "LAINNYA";
+        if (auto s = dynamic_cast<Street*>(prop)) {
+            groupName = colorCodeToFullName(s->getColorCode()); // Actually color group code is the same but `getColorGroup` exists
+            groupName = colorCodeToFullName(s->getColorGroup());
+        } else if (dynamic_cast<Railroad*>(prop)) {
+            groupName = "STASIUN";
+        } else if (dynamic_cast<Utility*>(prop)) {
+            groupName = "UTILITAS";
+        }
+
+        int nilaiGadai = prop->getHargaBeli() / 2;
+        std::cout << (i + 1) << ". " << nameKode << " [" << groupName << "] Nilai Gadai: " << formatUang(nilaiGadai) << "\n";
+    }
+
+    std::cout << "Pilih nomor properti (0 untuk batal): ";
+    std::string input;
+    std::getline(std::cin, input);
+    int choice = 0;
+    try { choice = std::stoi(input); } catch (...) {}
+
+    if (choice <= 0 || choice > (int)gadaiable.size()) {
+        return;
+    }
+
+    PetakProperti* target = gadaiable[choice - 1];
+
+    if (auto s = dynamic_cast<Street*>(target)) {
+        auto groupStreets = getStreetsInGroup(board, s->getColorGroup());
+        bool hasBuildings = false;
+        int totalSellValue = 0;
+        for (auto st : groupStreets) {
+            if (st->getHouseCount() > 0 || st->getIsHotel()) {
+                hasBuildings = true;
+                if (st->getIsHotel()) {
+                    totalSellValue += (st->getHotelPrice() / 2) + (st->getHousePrice() / 2) * 4;
+                } else {
+                    totalSellValue += (st->getHousePrice() / 2) * st->getHouseCount();
+                }
+            }
+        }
+
+        if (hasBuildings) {
+            std::cout << "Ada bangunan di color group " << colorCodeToFullName(s->getColorGroup()) << ".\n";
+            std::cout << "Kamu wajib menjual semua bangunan di color group tersebut (seharga " << formatUang(totalSellValue) << ") untuk menggadai " << s->getName() << ".\n";
+            std::cout << "Lanjutkan? (y/n): ";
+            std::getline(std::cin, input);
+            if (input != "y" && input != "Y") {
+                std::cout << "Gadai dibatalkan.\n";
+                return;
+            }
+            
+            for (auto st : groupStreets) {
+                st->demolishAllBuildings();
+            }
+            p.addMoney(totalSellValue);
+            std::cout << "Semua bangunan di color group terjual. Kamu menerima " << formatUang(totalSellValue) << ".\n";
+        }
+    }
+
+    target->gadai();
+    int nilaiGadai = target->getHargaBeli() / 2;
+    p.addMoney(nilaiGadai);
+    
+    std::cout << target->getName() << " berhasil digadaikan.\n";
+    std::cout << "Kamu menerima " << formatUang(nilaiGadai) << " dari Bank.\n";
+    std::cout << "Uang kamu sekarang: " << formatUang(p.getMoney()) << "\n";
+    std::cout << "Catatan: Sewa tidak dapat dipungut dari properti yang digadaikan.\n";
+}
+
+void GameManager::handleTebusCommand() {
+    Player& p = players[currentPlayerIndex];
+    const auto& props = p.getOwnedProperties();
+    std::vector<PetakProperti*> tebusable;
+    
+    for (auto prop : props) {
+        if (prop->getIsMortgaged()) {
+            tebusable.push_back(prop);
+        }
+    }
+
+    if (tebusable.empty()) {
+        std::cout << "Kamu tidak memiliki properti yang sedang digadaikan.\n";
+        return;
+    }
+
+    std::cout << "=== Properti yang Sedang Digadaikan ===\n";
+    for (size_t i = 0; i < tebusable.size(); i++) {
+        PetakProperti* prop = tebusable[i];
+        std::string nameKode = prop->getName() + " (" + prop->getShortName() + ")";
+        
+        std::string groupName = "LAINNYA";
+        if (auto s = dynamic_cast<Street*>(prop)) {
+            groupName = colorCodeToFullName(s->getColorGroup());
+        } else if (dynamic_cast<Railroad*>(prop)) {
+            groupName = "STASIUN";
+        } else if (dynamic_cast<Utility*>(prop)) {
+            groupName = "UTILITAS";
+        }
+
+        int hargaTebus = prop->getHargaBeli();
+        std::cout << (i + 1) << ". " << nameKode << " [" << groupName << "] [M] Harga Tebus: " << formatUang(hargaTebus) << "\n";
+    }
+
+    std::cout << "Uang kamu saat ini: " << formatUang(p.getMoney()) << "\n";
+    std::cout << "Pilih nomor properti (0 untuk batal): ";
+    std::string input;
+    std::getline(std::cin, input);
+    int choice = 0;
+    try { choice = std::stoi(input); } catch (...) {}
+
+    if (choice <= 0 || choice > (int)tebusable.size()) {
+        return;
+    }
+
+    PetakProperti* target = tebusable[choice - 1];
+    int hargaTebus = target->getHargaBeli();
+
+    try {
+        if (p.getMoney() < hargaTebus) {
+            throw std::invalid_argument("Uang tidak cukup untuk menebus properti!");
+        }
+        
+        p.reduceMoney(hargaTebus);
+        target->tebus();
+        
+        std::cout << target->getName() << " berhasil ditebus!\n";
+        std::cout << "Kamu membayar " << formatUang(hargaTebus) << " ke Bank.\n";
+        std::cout << "Uang kamu sekarang: " << formatUang(p.getMoney()) << "\n";
+        
+    } catch (const std::invalid_argument& e) {
+        std::cout << "[!] " << e.what() << "\n";
+    }
+}
+
+void GameManager::handleSimpanCommand(const std::string& args) {
+    if (args.empty()) {
+        std::cout << "Format salah. Gunakan: SIMPAN <nama_file.txt>\n";
+        return;
+    }
+
+    if (hasDoneAction) {
+        std::cout << "Kamu sudah melakukan aksi di giliran ini. SIMPAN hanya dapat dilakukan di awal giliran.\n";
+        return;
+    }
+
+    std::cout << "Menyimpan permainan...\n";
+    if (SaveManager::saveGame(*this, args)) {
+        std::cout << "Permainan berhasil disimpan ke " << args << "\n";
+    }
+}
+
 void GameManager::executePostRoll(Player& p, int roll1, int roll2, int& doublesCount, bool& endTurnFlag) {
     int rollTotal = roll1 + roll2;
     std::cout << "Hasil: " << roll1 << " + " << roll2 << " = " << rollTotal << "\n";
@@ -531,9 +774,11 @@ void GameManager::executePostRoll(Player& p, int roll1, int roll2, int& doublesC
                         std::cout << "Uang tersisa: " << formatUang(p.getMoney()) << "\n";
                     } else {
                         std::cout << "Uang tidak cukup!\nProperti ini akan masuk ke sistem lelang...\n";
+                        startAuction(prop, &p);
                     }
                 } else {
                     std::cout << "Properti ini akan masuk ke sistem lelang...\n";
+                    startAuction(prop, &p);
                 }
             }
             else if (dynamic_cast<Railroad*>(prop)) {
@@ -572,6 +817,13 @@ void GameManager::executePostRoll(Player& p, int roll1, int roll2, int& doublesC
     if (p.getMoney() < 0) {
         p.setStatus(PlayerStatus::BANKRUPT);
         std::cout << "!!! " << p.getName() << " WENT BANKRUPT !!!\n";
+        
+        auto props = p.getOwnedProperties();
+        for (auto prop : props) {
+            prop->lelang();
+            startAuction(prop, &p);
+        }
+
         endTurnFlag = true;
         return;
     }
@@ -586,6 +838,8 @@ void GameManager::playTurn() {
     if (p.getStatus() == PlayerStatus::BANKRUPT) {
         return; // Skip bankrupt players
     }
+
+    hasDoneAction = false;
 
     std::cout << "\n---------------------------------------------\n";
     std::cout << "Turn " << turnCount << " | Player: " << p.getName() 
@@ -616,6 +870,7 @@ void GameManager::playTurn() {
         ss >> action;
 
         if (action == "LEMPAR_DADU" || command == "") {
+            hasDoneAction = true;
             std::cout << "Mengocok dadu...\n";
             dice.roll();
             auto rollValues = dice.getLastRoll();
@@ -633,6 +888,19 @@ void GameManager::playTurn() {
                 cetakPropertiCommand(targetName);
             }
         }
+        else if (action == "GADAI") {
+            hasDoneAction = true;
+            handleGadaiCommand();
+        }
+        else if (action == "TEBUS") {
+            hasDoneAction = true;
+            handleTebusCommand();
+        }
+        else if (action == "SIMPAN") {
+            std::string filename;
+            std::getline(ss >> std::ws, filename);
+            handleSimpanCommand(filename);
+        }
         else if (action == "HELP") {
             std::cout << "============= DAFTAR PERINTAH =============\n";
             std::cout << "  CETAK_PAPAN   : Menampilkan peta/board\n";
@@ -641,13 +909,18 @@ void GameManager::playTurn() {
             std::cout << "  CETAK_AKTA    : Melihat info properti (Misal: JKT)\n";
             std::cout << "  CETAK_PROPERTI <NAMA> : Menampilkan properti milik pemain tertentu\n";
             std::cout << "  BANGUN           : Membangun rumah/hotel di Street milikmu (menu interaktif)\n";
+            std::cout << "  GADAI         : Menggadaikan properti ke Bank\n";
+            std::cout << "  TEBUS         : Menebus properti yang digadaikan dari Bank\n";
+            std::cout << "  SIMPAN <file> : Menyimpan state permainan (hanya di awal giliran)\n";
             std::cout << "  HELP          : Menampilkan (bantuan) daftar command yang tersedia\n";
             std::cout << "===========================================\n";
         }
         else if (action == "BANGUN") {
+            hasDoneAction = true;
             handleBangunCommand();
         }
         else if (action == "ATUR_DADU") {
+            hasDoneAction = true;
             int x, y;
             if (ss >> x >> y && x > 0 && y > 0 && x <= 6 && y <= 6) {
                 std::cout << "Dadu diatur secara manual.\n";
