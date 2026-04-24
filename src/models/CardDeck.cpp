@@ -1,39 +1,35 @@
 #include "models/CardDeck.hpp"
-#include <random>
 #include <algorithm>
+#include <random>
 #include <stdexcept>
 
-CardDeck::CardDeck(const std::string& name) : deckName(name) {}
+CardDeck::CardDeck(const std::string &name) : deckName(name) {}
 
 std::string CardDeck::getName() const { return deckName; }
 
-void CardDeck::addCard(const Card& card) {
-    cards.push_back(card);
+void CardDeck::addCard(std::unique_ptr<Card> card) {
+  cards.push_back(std::move(card));
 }
 
 void CardDeck::shuffleDeck() {
-    std::random_device rd;
-    std::mt19937 g(rd());
-    std::shuffle(cards.begin(), cards.end(), g);
+  std::random_device rd;
+  std::mt19937 g(rd());
+  std::shuffle(cards.begin(), cards.end(), g);
 }
 
-Card CardDeck::drawCard() {
-    if (cards.empty()) {
-        throw std::out_of_range("Cannot draw from an empty CardDeck.");
-    }
-    
-    // Draw from the top (front)
-    Card drawn = cards.front();
-    
-    // Remove it from the front
-    cards.erase(cards.begin());
-    
-    // Place it at the bottom (back)
-    cards.push_back(drawn);
-    
-    return drawn;
+std::unique_ptr<Card> CardDeck::drawCard() {
+  if (cards.empty()) {
+    throw std::out_of_range("Cannot draw from an empty CardDeck.");
+  }
+
+  std::unique_ptr<Card> drawn = std::move(cards.front());
+  cards.erase(cards.begin());
+
+  return drawn;
 }
 
-bool CardDeck::isEmpty() const {
-    return cards.empty();
+void CardDeck::returnCard(std::unique_ptr<Card> card) {
+  cards.push_back(std::move(card));
 }
+
+bool CardDeck::isEmpty() const { return cards.empty(); }
