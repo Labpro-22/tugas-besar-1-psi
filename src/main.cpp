@@ -2,21 +2,21 @@
 #include <iostream>
 
 int main() {
-    GameManager game;
+  GameManager game;
 
-    game.loadConfig("data/property.txt");
+  game.loadConfig("data/property.txt");
 
-    int numPlayers;
-    std::cout << "\nEnter number of players (e.g. 2): ";
+  int numPlayers;
+  std::cout << "\nEnter number of players (e.g. 2): ";
 
-    if (!(std::cin >> numPlayers) || numPlayers < 2) {
-        std::cin.clear();
-        std::cout << "Invalid. Falling back to 2 players.\n";
-        numPlayers = 2;
-    }
+  if (!(std::cin >> numPlayers) || numPlayers < 2) {
+    std::cin.clear();
+    std::cout << "Invalid. Falling back to 2 players.\n";
+    numPlayers = 2;
+  }
 
-    game.initPlayers(numPlayers);
-    game.startGame();
+  game.initPlayers(numPlayers);
+  game.startGame();
 
-    return 0;
+  return 0;
 }

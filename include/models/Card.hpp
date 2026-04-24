@@ -5,28 +5,41 @@
 
 class Player;
 
-enum class CardEffectType {
-    ADD_MONEY,
-    DEDUCT_MONEY,
-    MOVE_TO,
-    GO_TO_JAIL
-};
-
 class Card {
 protected:
-    std::string description;
-    CardEffectType effectType;
-    int value; // Money amount or board index
+  std::string description;
 
 public:
-    Card(const std::string& desc, CardEffectType type, int value);
-    virtual ~Card() = default;
+  Card(const std::string &desc);
+  virtual ~Card() = default;
 
-    std::string getDescription() const;
-    CardEffectType getEffectType() const;
-    int getValue() const;
+  std::string getDescription() const;
 
-    virtual void applyEffect(Player& p);
+  virtual void applyEffect(Player &p) = 0;
+};
+
+class MoneyCard : public Card {
+private:
+  int amount;
+
+public:
+  MoneyCard(const std::string &desc, int amount);
+  void applyEffect(Player &p) override;
+};
+
+class MoveCard : public Card {
+private:
+  int targetPosition;
+
+public:
+  MoveCard(const std::string &desc, int targetPosition);
+  void applyEffect(Player &p) override;
+};
+
+class JailCard : public Card {
+public:
+  JailCard(const std::string &desc);
+  void applyEffect(Player &p) override;
 };
 
 #endif
