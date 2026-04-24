@@ -4,28 +4,27 @@
 #include <string>
 
 class Player;
+class IGameUI;
 
 class Petak {
 protected:
-    int id;
-    std::string name;
-    std::string shortName;
-    std::string colorCode;
+  int id;
+  std::string name;
+  std::string shortName;
+  std::string colorCode;
 
 public:
-    Petak(int id, const std::string& name);
-    virtual ~Petak() = default;
+  Petak(int id, const std::string &name);
+  virtual ~Petak() = default;
 
-    int getId() const;
-    std::string getName() const;
+  int getId() const;
+  std::string getName() const;
 
-    // Display helpers
-    void setSkin(const std::string& sName, const std::string& cCode);
-    std::string getShortName() const;
-    std::string getColorCode() const;
+  void setSkin(const std::string &sName, const std::string &cCode);
+  std::string getShortName() const;
+  std::string getColorCode() const;
 
-    // Pure virtual method inherited by all types of Petak
-    virtual void injak(Player& p, int diceRoll = 0) = 0;
+  virtual void injak(Player &p, IGameUI &ui, int diceRoll = 0) = 0;
 };
 
 #endif

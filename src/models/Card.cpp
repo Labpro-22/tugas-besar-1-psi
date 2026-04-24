@@ -1,27 +1,30 @@
 #include "models/Card.hpp"
 #include "models/Player.hpp"
+#include "utils/GameConstants.hpp"
 
-Card::Card(const std::string& desc, CardEffectType type, int value)
-    : description(desc), effectType(type), value(value) {}
+Card::Card(const std::string &desc) : description(desc) {}
 
 std::string Card::getDescription() const { return description; }
-CardEffectType Card::getEffectType() const { return effectType; }
-int Card::getValue() const { return value; }
 
-void Card::applyEffect(Player& p) {
-    switch (effectType) {
-        case CardEffectType::ADD_MONEY:
-            p.addMoney(value);
-            break;
-        case CardEffectType::DEDUCT_MONEY:
-            p.reduceMoney(value);
-            break;
-        case CardEffectType::MOVE_TO:
-            p.setPosition(value);
-            break;
-        case CardEffectType::GO_TO_JAIL:
-            p.setPosition(10); // Standard Jail position index
-            p.setStatus(PlayerStatus::IN_JAIL);
-            break;
-    }
+MoneyCard::MoneyCard(const std::string &desc, int amount)
+    : Card(desc), amount(amount) {}
+
+void MoneyCard::applyEffect(Player &p) {
+  if (amount > 0) {
+    p.addMoney(amount);
+  } else {
+    p.reduceMoney(-amount);
+  }
+}
+
+MoveCard::MoveCard(const std::string &desc, int targetPosition)
+    : Card(desc), targetPosition(targetPosition) {}
+
+void MoveCard::applyEffect(Player &p) { p.setPosition(targetPosition); }
+
+JailCard::JailCard(const std::string &desc) : Card(desc) {}
+
+void JailCard::applyEffect(Player &p) {
+  p.setPosition(GameConstants::JAIL_POSITION);
+  p.setStatus(PlayerStatus::IN_JAIL);
 }

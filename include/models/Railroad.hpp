@@ -5,12 +5,15 @@
 
 class Railroad : public PetakProperti {
 private:
-    int baseRent;
+  int baseRent;
 
 public:
-    Railroad(int id, const std::string& name, int hargaBeli, int baseRent);
-    
-    int getSewa(int diceRoll = 0) const override;
+  Railroad(int id, const std::string &name, int hargaBeli, int baseRent);
+  int getSewa(int diceRoll = 0) const override;
+
+  std::string getGroupName() const override;
+  int getTotalWorth() const override;
+  void printDeed(IGameUI &ui) const override;
 };
 
 #endif

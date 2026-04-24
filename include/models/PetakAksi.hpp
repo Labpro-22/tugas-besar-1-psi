@@ -13,16 +13,16 @@ enum class ActionType {
 
 class PetakAksi : public Petak {
 private:
-    ActionType type;
-    int amount; // Used for GO bonus or TAX penalty
+  ActionType type;
+  int amount;
 
 public:
-    PetakAksi(int id, const std::string& name, ActionType type, int amount = 0);
-    
-    ActionType getType() const;
-    int getAmount() const;
+  PetakAksi(int id, const std::string &name, ActionType type, int amount = 0);
 
-    void injak(Player& p, int diceRoll = 0) override;
+  ActionType getType() const;
+  int getAmount() const;
+
+  void injak(Player &p, IGameUI &ui, int diceRoll = 0) override;
 };
 
 #endif

@@ -2,8 +2,8 @@
 #define STREET_HPP
 
 #include "models/PetakProperti.hpp"
-#include <vector>
 #include <string>
+#include <vector>
 
 class Street : public PetakProperti {
 private:
@@ -17,24 +17,24 @@ private:
     int festivalDuration;   // 0–3 turns remaining
 
 public:
-    Street(int id, const std::string& name, const std::string& colorGroup,
-           int hargaBeli, const std::vector<int>& rentPrices,
-           int housePrice, int hotelPrice);
+  Street(int id, const std::string &name, const std::string &colorGroup,
+         int hargaBeli, const std::vector<int> &rentPrices, int housePrice,
+         int hotelPrice);
 
-    std::string getColorGroup() const;
-    int getHouseCount() const;
-    bool getIsHotel() const;
-    const std::vector<int>& getRentPrices() const;
+  std::string getColorGroup() const;
+  int getHouseCount() const;
+  bool isHotelBuilt() const;
+  const std::vector<int> &getRentPrices() const;
 
-    bool canBuildHouse() const;
-    bool canUpgradeToHotel() const;
-    void buildHouse();
-    void upgradeToHotel();
-    void demolishAllBuildings();
+  bool canBuildHouse() const;
+  bool canUpgradeToHotel() const;
+  void buildHouse();
+  void upgradeToHotel();
+  void demolishAllBuildings();
 
-    int getHousePrice() const;
-    int getHotelPrice() const;
-    int getTotalBuildingCost() const;
+  int getHousePrice() const;
+  int getHotelPrice() const;
+  int getTotalBuildingCost() const;
 
     int getFestivalMultiplier() const;
     int getFestivalDuration() const;
@@ -43,7 +43,12 @@ public:
     void setFestivalState(int mult, int dur);
     void restoreBuildingState(int houses, bool hotel);
 
-    int getSewa(int diceRoll = 0) const override;
+    
+  int getSewa(int diceRoll = 0) const override;
+
+  std::string getGroupName() const override;
+  int getTotalWorth() const override;
+  void printDeed(IGameUI &ui) const override;
 };
 
 #endif
