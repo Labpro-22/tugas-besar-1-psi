@@ -104,3 +104,16 @@ Setelah permainan berjalan dan data inisialisasi pemain dimasukkan, Anda dapat m
 - Akuisisi Properti: Pemain diberikan pilihan untuk membeli properti bertipe Street. Untuk properti bertipe Railroad dan Utility yang belum berpemilik, hak milik akan diberikan secara otomatis tanpa pemotongan saldo saat pemain mendarat di petak tersebut.
 - Penjara: Pemain akan langsung dipindahkan ke petak Jail apabila mendapatkan nilai dadu kembar (double) tiga kali berturut-turut pada giliran yang sama.
 - Penanganan Input: Sistem dirancang untuk menangani berbagai format masukan pengguna demi mencegah terminasi program yang tidak semestinya akibat kesalahan format teks maupun spasi.
+
+---
+
+## Identitas Kelompok
+
+**Kode Kelompok:** PSI  
+**Nama Kelompok:** PengenSleep  
+
+1. 13524113 / Fauzan Mohammad Abdul Ghani
+2. 13524127 / Fazri Arrashyi Putra
+3. 13524132 / Dika Pramudya Nugraha
+4. 13524143 / Daniel Putra Rywandi S.
+5. 13524145 / Dzakwan Muhammad Khairan Putra Purnama
