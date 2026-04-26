@@ -1,68 +1,106 @@
 # Nimonspoli - CLI Monopoly Game in C++
 
-## 🎲 Deskripsi
-**Nimonspoli** adalah permainan papan legendaris Monopoly yang diadaptasi sepenuhnya ke dalam platform *Command Line Interface* (CLI). Dibangun menggunakan bahasa pemrograman **C++17** dengan fondasi *Object-Oriented Programming* (OOP) yang kokoh (mengadopsi prinsip *Tell, Don't Ask* dan *Runtime Polymorphism*). 
+## Deskripsi
+Nimonspoli adalah permainan Monopoly yang diadaptasi untuk platform Command Line Interface (CLI). Proyek ini dikembangkan menggunakan bahasa pemrograman C++17 dengan menerapkan prinsip Object-Oriented Programming (OOP) seperti Tell, Don't Ask dan Runtime Polymorphism.
 
-Permainan ini hadir dengan fitur papan visual (*hollow square* 11x11), sistem data dinamis yang membaca konfigurasi dari berkas eksternal (`property.txt`), manipulasi *string* `iomanip` yang rapi, serta *state-management* persisten selama sesi berlangsung.
-
----
-
-## ⚙️ Persyaratan Sistem (Requirements)
-- **Compiler:** Mendukung C++17 standar (misal: GCC 7.3+, Clang 5.0+).
-- **Build Tool:** GNU Make.
-- **Terminal:** Direkomendasikan menggunakan *Terminal Emulator* modern yang sepenuhnya mendukung sistem warna dan formating *ANSI Escape Codes* (WSL, Linux Terminal, macOS Terminal, atau Windows Terminal).
+Program ini dilengkapi dengan fitur papan visual berukuran 11x11, pembacaan konfigurasi properti dari file eksternal (`data/property.txt`), dan manajemen status permainan.
 
 ---
 
-## 🛠️ Cara Build & Kompilasi (Compile)
+## Struktur Direktori
 
-Proyek ini menggunakan `Makefile` untuk manajemen modul kompilasi yang terotomatisasi (meliputi layer `core`, `models`, `views`, dan `utils`).
+Berikut adalah representasi struktur direktori proyek ini:
 
-1. Buka *terminal* Anda.
-2. Pastikan direktori aktif Anda (*Current Working Directory*) berada tepat di folder akar (*root*) proyek Nimonspoli.
-3. Jalankan instruksi berikut untuk memicu kompilasi penuh:
+```text
+.
+|   .gitignore
+|   makefile
+|   README.md
+|   
++---config/
++---data/
+|       property.txt
+|       
++---include/
+|   +---core/         (Manajer permainan, pengontrol giliran, sistem pembayaran)
+|   +---models/       (Entitas data seperti Player, Petak, Dice, Card)
+|   +---utils/        (Utilitas sistem seperti ConfigParser, SaveManager)
+|   \---views/        (Antarmuka CLI dan representasi visual papan)
+|           
++---legacy/           (Implementasi terdahulu)
+\---src/
+    |   main.cpp
+    +---core/         (Implementasi manajer inti)
+    +---models/       (Implementasi entitas data)
+    +---utils/        (Implementasi utilitas sistem)
+    \---views/        (Implementasi antarmuka CLI)
+```
+
+---
+
+## Persyaratan Sistem
+- Compiler: Kompiler yang mendukung standar C++17 (contoh: GCC 7.3+, Clang 5.0+).
+- Build Tool: GNU Make.
+- Terminal: Terminal yang mendukung ANSI Escape Codes untuk pewarnaan dan format antarmuka.
+
+---
+
+## Cara Kompilasi
+
+Proyek ini menggunakan Makefile untuk mengelola proses kompilasi modul-modul yang terbagi dalam layer core, models, views, dan utils.
+
+1. Buka terminal.
+2. Arahkan direktori aktif ke folder root proyek Nimonspoli.
+3. Jalankan perintah berikut:
 
 ```bash
 make
 ```
 
-> **Catatan:** Jika *build* sukses, file biner *executable* akan secara otomatis digenerasikan dan diletakkan pada path `./bin/game`. Semua *object files* akan diletakkan di dalam folder `./build/`.
+Catatan: Setelah kompilasi berhasil, file executable akan disimpan di `./bin/game` dan seluruh object files akan berada di `./build/`.
 
 ---
 
-## 🚀 Cara Menjalankan (Run)
+## Cara Menjalankan
 
-Sangat penting untuk mengeksekusi program dari *root directory* dari proyek ini agar sistem *ConfigParser* berhasil melacak *path* konfigurasi file `data/property.txt` dengan benar.
+Program sebaiknya dieksekusi dari root directory proyek agar file konfigurasi `data/property.txt` dapat ditemukan oleh sistem dengan benar.
 
-Anda bisa menjalankannya via `Makefile`:
+Anda dapat menjalankan program melalui Makefile:
 ```bash
 make run
 ```
 
-Atau jika ingin mengeksekusi biner utamanya secara manual:
+Atau mengeksekusi file biner utamanya secara langsung:
 ```bash
 ./bin/game
 ```
 
 ---
 
-## 🕹️ Daftar Perintah CLI (Command List) [SEMENTARA]
+## Daftar Perintah CLI
 
-Saat permainan dimulai, Anda akan diminta untuk memasukkan jumlah pemain dan nama setiap pemain. Selama giliran aktif (selama Anda belum menyentuh kondisi *End Turn*), Anda bebas mengeksekusi berbagai instruksi ini:
+Setelah permainan berjalan dan data inisialisasi pemain dimasukkan, Anda dapat menggunakan perintah-perintah berikut pada giliran Anda:
 
 | Perintah | Deskripsi |
 | :--- | :--- |
-| `CETAK_PAPAN` | Mencetak visual 11x11 *board* Nimonspoli beserta letak bidak `(1)(2)...` dan tingkat bangunan rumah/hotel `(^)` yang presisi. |
-| `LEMPAR_DADU` | Mengocok sepasang dadu (D6) secara acak. <br>*💡 Hint: Anda cukup menekan tombol `Enter` (kosong) sebagai shortcut pelemparan dadu.* |
-| `ATUR_DADU X Y` | Memanipulasi angka sepasang dadu. Sangat berguna untuk kepentingan *Testing* dan proses penilaian asisten (contoh: `ATUR_DADU 1 4`). Pastikan `X` dan `Y` bernilai lebih dari 0. |
-| `CETAK_AKTA` | Melihat informasi dan UI Mini-Akta lengkap milik sebuah properti (mencakup harga sewa bertingkat, kepemilikan, harga beli/gadai). Anda akan diminta memasukkan "KODE" singkat properti (contoh: `GBR`, `JKT`, `PLN`). |
-| `HELP` | Menampilkan panduan bantuan ringkas tentang seluruh perintah di atas selama *runtime*. |
+| `LEMPAR_DADU` | Mengacak nilai dua buah dadu. Anda juga dapat menggunakan tombol Enter sebagai jalan pintas. |
+| `ATUR_DADU X Y` | Mengatur nilai dadu secara manual menjadi X dan Y (dengan X, Y > 0). Perintah ini difasilitasi untuk kebutuhan pengujian. |
+| `CETAK_PAPAN` | Menampilkan visual papan berukuran 11x11 beserta posisi bidak pemain dan status bangunan. |
+| `CETAK_AKTA` | Menampilkan informasi rincian suatu properti, termasuk harga beli dan sewa. |
+| `CETAK_PROPERTI <NAMA>` | Menampilkan daftar properti yang dikuasai oleh pemain yang dispesifikasikan. |
+| `BANGUN` | Mendirikan bangunan (rumah atau hotel) pada properti yang memenuhi syarat. |
+| `GADAI` | Menggadaikan properti kepada Bank untuk memperoleh dana instan. |
+| `TEBUS` | Menebus kembali properti yang sebelumnya telah digadaikan. |
+| `GUNAKAN_KEMAMPUAN` | Memakai kartu atau kemampuan khusus yang dimiliki oleh pemain. |
+| `SIMPAN <file>` | Menyimpan sesi permainan saat ini ke dalam berkas tertentu. |
+| `CETAK_LOG [n]` | Menampilkan riwayat transaksi dan aksi dalam permainan (menampilkan sebanyak `n` entri terakhir). |
+| `HELP` | Menampilkan panduan dan daftar perintah yang dapat digunakan selama permainan berlangsung. |
 
 ---
 
-## 🌟 Fitur Inti Mekanik
+## Mekanisme Permainan
 
-- **Auto-Rent Enforcement:** Berkat implementasi prinsip "*Tell, Don't Ask*", pemain yang mendarat di properti musuh akan langsung ditarik saldo sewanya secara sistematis.
-- **Auto-Acquisition:** Membeli petak jalan biasa (`Street`) akan memunculkan *prompt* `(Y/N)`, tetapi mendarat di Stasiun (`Railroad`) atau Perusahaan (`Utility`) kosong akan langsung diberikan secara gratis (Otomatis).
-- **Rule of Threes (Penjara):** Mendapatkan lemparan dadu kembar (Double) 3 kali berturut-turut akan dianggap ngebut dan pemain dijebloskan langsung ke JAIL.
-- **Anti-Crash Parsing:** Validasi input *commands* telah dirancang sangat *robust*. Kesalahan pengetikan, kelebihan spasi, atau input di luar batasan tidak akan menyebabkan program *Segmentation Fault* berkat manajemen proteksi tipe dinamis di C++17.
+- Pembayaran Sewa: Pemain yang mendarat di properti milik pemain lain akan membayar sewa secara otomatis kepada pemilik.
+- Akuisisi Properti: Pemain diberikan pilihan untuk membeli properti bertipe Street. Untuk properti bertipe Railroad dan Utility yang belum berpemilik, hak milik akan diberikan secara otomatis tanpa pemotongan saldo saat pemain mendarat di petak tersebut.
+- Penjara: Pemain akan langsung dipindahkan ke petak Jail apabila mendapatkan nilai dadu kembar (double) tiga kali berturut-turut pada giliran yang sama.
+- Penanganan Input: Sistem dirancang untuk menangani berbagai format masukan pengguna demi mencegah terminasi program yang tidak semestinya akibat kesalahan format teks maupun spasi.
