@@ -19,12 +19,13 @@ private:
   PlayerStatus status;
   bool shieldActive;
   int discountActive;
+  bool comPlayer;
 
   std::vector<PetakProperti *> ownedProperties;
   std::vector<std::unique_ptr<SpecialCard>> hand;
 
 public:
-  Player(int id, const std::string &name, int startingMoney = 1500);
+  Player(int id, const std::string &name, int startingMoney = 1500, bool isCom = false);
   ~Player() = default;
   Player(Player&&) noexcept = default;
   Player& operator=(Player&&) noexcept = default;
@@ -61,6 +62,9 @@ public:
   const std::vector<std::unique_ptr<SpecialCard>> &getHand() const;
   int  getHandSize() const;
   bool isHandFull()  const;
+
+  bool isComPlayer() const;
+  void setComPlayer(bool isCom);
 };
 
 #endif

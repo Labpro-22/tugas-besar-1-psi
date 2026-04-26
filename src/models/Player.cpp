@@ -3,9 +3,10 @@
 #include "models/Utility.hpp"
 #include <algorithm>
 
-Player::Player(int id, const std::string &name, int startingMoney)
+Player::Player(int id, const std::string &name, int startingMoney, bool isCom)
     : id(id), name(name), money(startingMoney), position(0),
-      status(PlayerStatus::ACTIVE), shieldActive(false), discountActive(0) {}
+      status(PlayerStatus::ACTIVE), shieldActive(false), discountActive(0),
+      comPlayer(isCom) {}
 
 int Player::getId() const { return id; }
 std::string Player::getName() const { return name; }
@@ -89,3 +90,6 @@ const std::vector<std::unique_ptr<SpecialCard>> &Player::getHand() const {
 
 int  Player::getHandSize() const { return static_cast<int>(hand.size()); }
 bool Player::isHandFull()  const { return static_cast<int>(hand.size()) >= 3; }
+
+bool Player::isComPlayer() const { return comPlayer; }
+void Player::setComPlayer(bool isCom) { comPlayer = isCom; }

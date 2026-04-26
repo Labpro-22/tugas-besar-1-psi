@@ -75,7 +75,7 @@ void Street::restoreBuildingState(int houses, bool hotel) {
   isHotelBuilt_field = hotel;
 }
 
-int Street::getSewa(int /*diceRoll*/) const {
+int Street::getSewa(int ) const {
   if (isMortgaged)
     return 0;
   int level = isHotelBuilt_field ? 5 : houseCount;

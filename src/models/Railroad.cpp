@@ -6,7 +6,7 @@
 Railroad::Railroad(int id, const std::string &name, int hargaBeli, int baseRent)
     : PetakProperti(id, name, hargaBeli), baseRent(baseRent) {}
 
-int Railroad::getSewa(int /*diceRoll*/) const {
+int Railroad::getSewa(int ) const {
   if (isMortgaged || !owner)
     return 0;
 

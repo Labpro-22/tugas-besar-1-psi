@@ -13,8 +13,8 @@ private:
   bool isHotelBuilt_field;
   int housePrice;
   int hotelPrice;
-  int festivalMultiplier;// 1, 2, 4, 8  (1 = tidak aktif)
-  int festivalDuration;// 0–3 giliran tersisa
+  int festivalMultiplier;
+  int festivalDuration;
 
 public:
   Street(int id, const std::string &name, const std::string &colorGroup,

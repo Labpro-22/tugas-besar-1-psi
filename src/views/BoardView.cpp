@@ -89,14 +89,11 @@ void BoardView::printBoard(const std::vector<std::unique_ptr<Petak>> &board,
   }
   printHorizBorderFull();
 
-  // Lebar total: 11 kotak * 13 karakter/kotak + 1 = 144 karakter.
-  // Lebar tengah (tanpa 2 kotak di ujung): 144 - 1 (kiri) - 12 (sel) - 1
-  // (kanan) - 12 (sel) - 2 (batas) = 116 spasi
   std::vector<std::string> centerStr(18, std::string(116, ' '));
   auto putText = [&](int row, const std::string &txt) {
     if (row < 0 || row >= static_cast<int>(centerStr.size()))
       return;
-    int col = (116 - static_cast<int>(txt.length())) / 2; // Rata tengah
+    int col = (116 - static_cast<int>(txt.length())) / 2;
     for (size_t i = 0; i < txt.length(); i++) {
       int c = col + static_cast<int>(i);
       if (c >= 0 && c < 116) {
@@ -111,7 +108,7 @@ void BoardView::printBoard(const std::vector<std::unique_ptr<Petak>> &board,
 
   putText(6, "TURN " + std::to_string(turnCount) + " / 50");
 
-  putText(8, "--------------------------------------------------");
+  putText(8, "----------------------------------------");
   putText(9, "LEGENDA KEPEMILIKAN & STATUS");
   putText(10, "P1-P4 : Properti milik Pemain 1-4");
   putText(11, "^     : Rumah Level 1");
@@ -119,7 +116,7 @@ void BoardView::printBoard(const std::vector<std::unique_ptr<Petak>> &board,
   putText(13, "^^^   : Rumah Level 3");
   putText(14, "*     : Hotel (Maksimal)");
   putText(15, "(1)-(4) : Bidak (Posisi Pemain saat ini)");
-  putText(16, "--------------------------------------------------");
+  putText(16, "----------------------------------------");
 
   for (int r = 1; r <= 9; r++) {
     int leftPos = 20 - r;

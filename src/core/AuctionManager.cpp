@@ -5,7 +5,6 @@
 #include "views/IGameUI.hpp"
 #include <sstream>
 
-//Fitur 12: LELANG
 void AuctionManager::startAuction(PetakProperti *prop, Player *initiator,
                                   std::vector<Player> &allPlayers,
                                   IGameUI &ui) {
@@ -36,38 +35,65 @@ void AuctionManager::startAuction(PetakProperti *prop, Player *initiator,
          consecutivePass < (int)activeBidders.size()) {
     Player *currentP = activeBidders[currentBidderIdx];
 
-    ui.showMessage("Giliran: " + currentP->getName());
-    std::string input = ui.promptInput("Aksi (PASS / BID <jumlah>):\n> ");
-
-    std::stringstream ss(input);
     std::string action;
-    ss >> action;
+    int bidAmount = 0;
+
+    if (currentP->isComPlayer()) {
+      ui.showMessage("Giliran: " + currentP->getName() + " [COM]");
+
+      int maxWilling = static_cast<int>(prop->getHargaBeli() * 0.8);
+      int maxAffordable = currentP->getMoney();
+      int maxBid = std::min(maxWilling, maxAffordable);
+
+      if (highestBid < maxBid) {
+        bidAmount = highestBid + std::max(50, prop->getHargaBeli() / 10);
+        if (bidAmount <= maxBid && bidAmount > 0) {
+          action = "BID";
+          ui.showMessage("[COM " + currentP->getName() + "] BID " +
+                         formatUang(bidAmount) +
+                         " (strategi: maks 80% harga properti)");
+        } else {
+          action = "PASS";
+          ui.showMessage("[COM " + currentP->getName() + "] PASS (bid melebihi batas)");
+        }
+      } else {
+        action = "PASS";
+        ui.showMessage("[COM " + currentP->getName() + "] PASS (harga sudah terlalu tinggi)");
+      }
+    } else {
+
+      ui.showMessage("Giliran: " + currentP->getName());
+      std::string input = ui.promptInput("Aksi (PASS / BID <jumlah>):\n> ");
+
+      std::stringstream ss(input);
+      ss >> action;
+      if (action == "BID") {
+        if (!(ss >> bidAmount)) {
+          ui.showMessage("Format BID salah!\n");
+          continue;
+        }
+      }
+    }
 
     if (action == "BID") {
-      int amount;
-      if (ss >> amount) {
-        if (amount > currentP->getMoney()) {
-          ui.showMessage("Uang tidak cukup untuk BID!\n");
-          continue;
-        }
-        if (highestBid > 0 && amount <= highestBid) {
-          ui.showMessage("BID harus lebih besar dari penawaran tertinggi (" +
-                         formatUang(highestBid) + ")!\n");
-          continue;
-        }
-        if (highestBid == 0 && amount <= 0) {
-          ui.showMessage("BID harus lebih besar dari 0!\n");
-          continue;
-        }
-        highestBid = amount;
-        highestBidder = currentP;
-        consecutivePass = 0;
-        ui.showMessage("Penawaran tertinggi: " + formatUang(highestBid) + " (" +
-                       highestBidder->getName() + ")\n");
-      } else {
-        ui.showMessage("Format BID salah!\n");
+      if (bidAmount > currentP->getMoney()) {
+        ui.showMessage("Uang tidak cukup untuk BID!\n");
         continue;
       }
+      if (highestBid > 0 && bidAmount <= highestBid) {
+        ui.showMessage("BID harus lebih besar dari penawaran tertinggi (" +
+                       formatUang(highestBid) + ")!\n");
+        continue;
+      }
+      if (highestBid == 0 && bidAmount <= 0) {
+        ui.showMessage("BID harus lebih besar dari 0!\n");
+        continue;
+      }
+      highestBid = bidAmount;
+      highestBidder = currentP;
+      consecutivePass = 0;
+      ui.showMessage("Penawaran tertinggi: " + formatUang(highestBid) + " (" +
+                     highestBidder->getName() + ")\n");
     } else {
       ui.showMessage(currentP->getName() + " PASS.\n");
       consecutivePass++;

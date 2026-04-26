@@ -38,10 +38,8 @@ void MoneyCard::applyEffect(Player &p, IGameUI &ui, std::vector<std::unique_ptr<
 MoveCard::MoveCard(const std::string &desc, int targetPosition)
     : Card(desc), targetPosition(targetPosition) {}
 
-
-
-void MoveCard::applyEffect(Player &p, IGameUI &ui, std::vector<std::unique_ptr<Petak>>* board, std::vector<Player>* players) { 
-    p.setPosition(targetPosition); 
+void MoveCard::applyEffect(Player &p, IGameUI &ui, std::vector<std::unique_ptr<Petak>>* board, std::vector<Player>* players) {
+    p.setPosition(targetPosition);
     if (board && targetPosition >= 0 && targetPosition < (int)board->size()) {
         ui.showMessage("Bidak dipindahkan ke " + (*board)[targetPosition]->getShortName() + ".");
         (*board)[targetPosition]->injak(p, ui, 0, board, players);
@@ -233,8 +231,7 @@ void SpecialCard::applyEffect(Player &p, IGameUI &ui, std::vector<std::unique_pt
             if (choice >= 1 && choice <= (int)targetProps.size()) {
                 PetakProperti *targetProp = targetProps[choice - 1];
                 Player *targetOwner = targetProp->getOwner();
-                
-               
+
                 if (auto *street = dynamic_cast<Street*>(targetProp)) {
                     street->demolishAllBuildings();
                 }

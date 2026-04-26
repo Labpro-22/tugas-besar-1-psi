@@ -1,6 +1,7 @@
 #ifndef TURNCONTROLLER_HPP
 #define TURNCONTROLLER_HPP
 
+#include "core/ComPlayerAI.hpp"
 #include "models/CardDeck.hpp"
 #include "models/Dice.hpp"
 #include "models/Petak.hpp"
@@ -31,8 +32,8 @@ private:
 
   std::function<bool(const std::string &)>  cbSave;
   std::function<void(const std::string &)>  cbLog;
-  std::function<void *()>     cbDraw;   
-  std::function<void(void *)> cbDiscard; 
+  std::function<void *()>     cbDraw;
+  std::function<void(void *)> cbDiscard;
 
   void addLog(const std::string &jenis, const std::string &detail,
               const std::string &username);
@@ -41,6 +42,9 @@ private:
   void handleTurnStart(Player &p);
   void handleDropCard(Player &p);
   void printLog(int n) const;
+
+  ComPlayerAI comAI;
+  void playComTurn(Player &p);
 
 public:
   TurnController(

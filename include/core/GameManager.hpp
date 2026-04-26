@@ -52,14 +52,12 @@ public:
   void addLog(const std::string &entry);
   const std::vector<std::string> &getLog() const;
 
-
   const std::vector<Player>                  &getPlayers()  const { return players; }
   const std::vector<std::unique_ptr<Petak>>  &getBoard()    const { return board; }
   int getCurrentPlayerIndex() const { return currentPlayerIndex; }
   int getTurnCount()          const { return turnCount; }
   int getMaxTurn()            const { return maxTurn; }
 
-  // Mutable getters (digunakan SaveManager::loadGame)
   std::vector<Player>                 &getPlayersRef()  { return players; }
   std::vector<std::unique_ptr<Petak>> &getBoardRef()    { return board; }
   void setCurrentPlayerIndex(int i)   { currentPlayerIndex = i; }

@@ -13,7 +13,6 @@
 #include <iostream>
 #include <sstream>
 
-
 static std::string posCodeOf(int pos,
                              const std::vector<std::unique_ptr<Petak>> &board) {
   if (pos >= 0 && pos < static_cast<int>(board.size()) && board[pos])
@@ -51,12 +50,10 @@ bool SaveManager::saveGame(const GameManager &gm,
   const auto &board   = gm.getBoard();
   int numPlayers = static_cast<int>(players.size());
 
-  
   out << gm.getTurnCount() << " " << gm.getMaxTurn() << "\n";
-  
+
   out << numPlayers << "\n";
 
-  
   for (const auto &p : players) {
     std::string statusStr;
     switch (p.getStatus()) {
@@ -64,20 +61,23 @@ bool SaveManager::saveGame(const GameManager &gm,
     case PlayerStatus::IN_JAIL:  statusStr = "JAILED";   break;
     case PlayerStatus::BANKRUPT: statusStr = "BANKRUPT"; break;
     }
+
+    std::string playerType = p.isComPlayer() ? "COM" : "HUMAN";
     out << p.getName() << " " << p.getMoney() << " "
-        << posCodeOf(p.getPosition(), board) << " " << statusStr << "\n";
+        << posCodeOf(p.getPosition(), board) << " " << statusStr
+        << " " << playerType << "\n";
 
     const auto &hand = p.getHand();
     out << hand.size() << "\n";
     for (const auto &card : hand) {
       out << card->getTypeName();
-      
+
       if (card->getType() == SpecialCardType::MOVE ||
           card->getType() == SpecialCardType::DISCOUNT)
         out << " " << card->getValue();
       else
         out << " -";
-      
+
       if (card->getType() == SpecialCardType::DISCOUNT)
         out << " " << card->getDuration();
       else
@@ -93,7 +93,6 @@ bool SaveManager::saveGame(const GameManager &gm,
   out << "\n";
   out << players[gm.getCurrentPlayerIndex()].getName() << "\n";
 
-  
   std::vector<const PetakProperti *> allProps;
   for (const auto &petak : board) {
     if (auto *pp = dynamic_cast<const PetakProperti *>(petak.get()))
@@ -134,7 +133,6 @@ bool SaveManager::saveGame(const GameManager &gm,
   return true;
 }
 
-
 bool SaveManager::loadGame(GameManager &gm, const std::string &filename) {
   std::ifstream in(filename);
   if (!in) {
@@ -159,13 +157,14 @@ bool SaveManager::loadGame(GameManager &gm, const std::string &filename) {
     in.ignore();
 
     for (int i = 0; i < numPlayers; ++i) {
-      std::string uname, posCode, statusStr;
+      std::string uname, posCode, statusStr, playerType;
       int money = 0;
-      if (!(in >> uname >> money >> posCode >> statusStr))
+      if (!(in >> uname >> money >> posCode >> statusStr >> playerType))
         throw std::runtime_error("Format pemain tidak valid.");
       in.ignore();
 
-      Player p(i + 1, uname, money);
+      bool isCom = (playerType == "COM");
+      Player p(i + 1, uname, money, isCom);
       p.setPosition(posIndexOf(posCode, board));
 
       if (statusStr == "JAILED")   p.setStatus(PlayerStatus::IN_JAIL);
@@ -201,7 +200,6 @@ bool SaveManager::loadGame(GameManager &gm, const std::string &filename) {
     if (!std::getline(in, orderLine))
       throw std::runtime_error("Baris urutan giliran tidak ditemukan.");
 
-    
     std::string currentName;
     if (!std::getline(in, currentName))
       throw std::runtime_error("Baris pemain aktif tidak ditemukan.");
@@ -257,7 +255,7 @@ bool SaveManager::loadGame(GameManager &gm, const std::string &filename) {
       if (auto *s = dynamic_cast<Street *>(prop)) {
         s->setFestivalState(fmult, fdur);
         if (nbuildStr == "H") {
-          s->restoreBuildingState(4, true); 
+          s->restoreBuildingState(4, true);
         } else {
           int houses = std::stoi(nbuildStr);
           s->restoreBuildingState(houses, false);
@@ -266,7 +264,7 @@ bool SaveManager::loadGame(GameManager &gm, const std::string &filename) {
     }
 
     int numLog = 0;
-    if (!(in >> numLog)) { /* log mungkin kosong */ numLog = 0; }
+    if (!(in >> numLog)) {  numLog = 0; }
     in.ignore();
     gm.clearLog();
     for (int i = 0; i < numLog; ++i) {

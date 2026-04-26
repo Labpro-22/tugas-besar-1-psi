@@ -26,24 +26,24 @@ std::string ColorRegistry::getFullName(const std::string &code) {
 
 std::string ColorRegistry::getAnsiColor(const std::string &code) {
   if (code == "CK")
-    return "\033[38;5;130m"; // Coklat
+    return "\033[38;5;130m";
   if (code == "BM")
-    return "\033[96m"; // Biru Muda
+    return "\033[96m";
   if (code == "PK")
-    return "\033[95m"; // Pink
+    return "\033[95m";
   if (code == "AB")
-    return "\033[90m"; // Abu-abu
+    return "\033[90m";
   if (code == "OR")
-    return "\033[38;5;208m"; // Orange
+    return "\033[38;5;208m";
   if (code == "MR")
-    return "\033[91m"; // Merah
+    return "\033[91m";
   if (code == "KN")
-    return "\033[93m"; // Kuning
+    return "\033[93m";
   if (code == "HJ")
-    return "\033[92m"; // Hijau
+    return "\033[92m";
   if (code == "BT")
-    return "\033[94m"; // Biru Tua
+    return "\033[94m";
   if (code == "DF")
-    return "\033[97m"; // Putih/Default
-  return "\033[0m";    // Default
+    return "\033[97m";
+  return "\033[0m";
 }

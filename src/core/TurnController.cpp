@@ -1,5 +1,6 @@
 #include "core/TurnController.hpp"
 #include "core/AuctionManager.hpp"
+#include "core/ComPlayerAI.hpp"
 #include "core/PropertyCommandHandler.hpp"
 #include "models/Card.hpp"
 #include "models/CardDeck.hpp"
@@ -20,7 +21,6 @@
 
 #include <iomanip>
 #include <sstream>
-
 
 TurnController::TurnController(
     std::vector<std::unique_ptr<Petak>> &board_,
@@ -55,7 +55,6 @@ void TurnController::addLog(const std::string &jenis,
           " " + detail);
 }
 
-
 void TurnController::printLog(int n) const {
   if (transactionLog.empty()) {
     ui.showMessage("Log transaksi kosong.");
@@ -80,7 +79,6 @@ void TurnController::printLog(int n) const {
   }
 }
 
-
 void TurnController::handleDropCard(Player &p) {
   const auto &hand = p.getHand();
   int sz = static_cast<int>(hand.size());
@@ -91,6 +89,30 @@ void TurnController::handleDropCard(Player &p) {
     ui.showMessage(std::to_string(i + 1) + ". " +
                    hand[i]->getTypeName() + " - " +
                    hand[i]->getDescription());
+
+  if (p.isComPlayer()) {
+    int choice = comAI.chooseCardToDrop(p);
+    if (choice < 1 || choice > sz) choice = 1;
+    int idx = choice - 1;
+    std::string nama = hand[idx]->getTypeName();
+
+    ComPlayerAI::logDecision(p, ui, "Membuang kartu: " + nama,
+                             "otomatis memilih kartu #" + std::to_string(choice));
+
+    SpecialCard *rawDiscard = new SpecialCard(
+        hand[idx]->getType(), hand[idx]->getValue(),
+        hand[idx]->getDuration());
+    p.removeSpecialCard(idx);
+    if (cbDiscard)
+      cbDiscard(static_cast<void *>(rawDiscard));
+    else
+      delete rawDiscard;
+
+    ui.showMessage("\n" + nama + " telah dibuang. Sekarang kamu memiliki " +
+                   std::to_string(p.getHandSize()) + " kartu di\ntangan.");
+    addLog("DROP_KARTU", "Buang " + nama, p.getName());
+    return;
+  }
 
   while (true) {
     std::string inp = ui.promptInput(
@@ -106,7 +128,6 @@ void TurnController::handleDropCard(Player &p) {
     int idx = choice - 1;
     std::string nama = hand[idx]->getTypeName();
 
-    // Buat SpecialCard baru untuk discard (raw pointer lewat void*)
     SpecialCard *rawDiscard = new SpecialCard(
         hand[idx]->getType(), hand[idx]->getValue(),
         hand[idx]->getDuration());
@@ -123,13 +144,11 @@ void TurnController::handleDropCard(Player &p) {
   }
 }
 
-
 void TurnController::handleTurnStart(Player &p) {
-  // Reset shield and discount
+
   p.setShieldActive(false);
   p.setDiscount(0);
 
-  // Kurangi durasi festival tiap Street milik pemain
   for (auto *prop : p.getOwnedProperties()) {
     if (auto *s = dynamic_cast<Street *>(prop)) {
       if (s->getFestivalDuration() > 0)
@@ -137,7 +156,6 @@ void TurnController::handleTurnStart(Player &p) {
     }
   }
 
-  // Bagikan 1 kartu kemampuan acak
   if (!cbDraw) return;
   void *rawCard = cbDraw();
   if (!rawCard) return;
@@ -150,11 +168,9 @@ void TurnController::handleTurnStart(Player &p) {
 
   p.addSpecialCard(std::unique_ptr<SpecialCard>(card));
 
-  // 3. Jika tangan > 3, maka DROP
   if (p.getHandSize() > 3)
     handleDropCard(p);
 }
-
 
 void TurnController::executePostRoll(Player &p, int roll1, int roll2,
                                      int &doublesCount, bool &endTurnFlag) {
@@ -338,6 +354,11 @@ void TurnController::playTurn() {
   if (p.getStatus() == PlayerStatus::BANKRUPT)
     return;
 
+  if (p.isComPlayer()) {
+    playComTurn(p);
+    return;
+  }
+
   hasDoneAction = false;
   handleTurnStart(p);
 
@@ -378,20 +399,20 @@ void TurnController::playTurn() {
             ui.showMessage(std::to_string(i + 1) + ". " + hand[i]->getTypeName() + " - " + hand[i]->getDescription());
           }
           ui.showMessage("0. Batal");
-          
+
           std::string choiceStr = ui.promptInput("Pilih kartu yang ingin digunakan (0-" + std::to_string(hand.size()) + "): ");
           int choice = -1;
           try { choice = std::stoi(choiceStr); } catch (...) {}
-          
+
           if (choice == 0) {
-            // Cancelled
+
           } else if (choice > 0 && choice <= (int)hand.size()) {
             int idx = choice - 1;
             ui.showMessage(hand[idx]->getTypeName() + " diaktifkan! " + hand[idx]->getDescription());
             addLog("KEMAMPUAN", "Gunakan " + hand[idx]->getTypeName(), p.getName());
-            
+
             hand[idx]->applyEffect(p, ui, &board, &players);
-            
+
             SpecialCard *rawDiscard = new SpecialCard(hand[idx]->getType(), hand[idx]->getValue(), hand[idx]->getDuration());
             p.removeSpecialCard(idx);
             if (cbDiscard) {
@@ -399,7 +420,7 @@ void TurnController::playTurn() {
             } else {
               delete rawDiscard;
             }
-            
+
             hasUsedAbility = true;
           } else {
             ui.showMessage("Pilihan tidak valid.");
@@ -468,7 +489,7 @@ void TurnController::playTurn() {
 
     } else if (action == "CETAK_LOG") {
       int n = 0;
-      ss >> n; // 0 = semua
+      ss >> n;
       printLog(n);
 
     } else if (action == "HELP") {
@@ -489,5 +510,203 @@ void TurnController::playTurn() {
     } else {
       ui.showMessage("[!] Perintah tidak dikenal: " + action);
     }
+  }
+}
+
+void TurnController::playComTurn(Player &p) {
+  hasDoneAction = false;
+  handleTurnStart(p);
+
+  ui.showMessage("\n=============================================");
+  ui.showMessage("Turn  | [COM] " + p.getName() +
+                 " | Saldo: " + formatUang(p.getMoney()));
+  ui.showMessage("=============================================");
+
+  if (p.getStatus() == PlayerStatus::IN_JAIL) {
+    ComPlayerAI::logDecision(p, ui, "Sedang di penjara, melewati giliran.");
+    p.setStatus(PlayerStatus::ACTIVE);
+    return;
+  }
+
+  int cardChoice = comAI.chooseSpecialCardToUse(p);
+  if (cardChoice > 0 && cardChoice <= p.getHandSize()) {
+    const auto &hand = p.getHand();
+    int idx = cardChoice - 1;
+
+    ComPlayerAI::logDecision(p, ui,
+                             "Menggunakan kartu: " + hand[idx]->getTypeName(),
+                             hand[idx]->getDescription());
+    addLog("KEMAMPUAN", "Gunakan " + hand[idx]->getTypeName(), p.getName());
+
+    hand[idx]->applyEffect(p, ui, &board, &players);
+
+    SpecialCard *rawDiscard = new SpecialCard(
+        hand[idx]->getType(), hand[idx]->getValue(), hand[idx]->getDuration());
+    p.removeSpecialCard(idx);
+    if (cbDiscard)
+      cbDiscard(static_cast<void *>(rawDiscard));
+    else
+      delete rawDiscard;
+  }
+
+  int doublesCount = 0;
+  bool endTurnFlag = false;
+
+  while (!endTurnFlag) {
+    hasDoneAction = true;
+
+    ComPlayerAI::logDecision(p, ui, "Mengocok dadu...");
+    dice.roll();
+    auto rv = dice.getLastRoll();
+    int roll1 = rv.first, roll2 = rv.second;
+    int rollTotal = roll1 + roll2;
+
+    ui.showMessage("Hasil: " + std::to_string(roll1) + " + " +
+                   std::to_string(roll2) + " = " + std::to_string(rollTotal));
+    addLog("DADU",
+           "Lempar: " + std::to_string(roll1) + "+" +
+               std::to_string(roll2) + "=" + std::to_string(rollTotal),
+           p.getName());
+
+    bool isDouble = (roll1 == roll2);
+    if (isDouble) {
+      ++doublesCount;
+      if (doublesCount == 3) {
+        ui.showMessage("[!] 3 Kali KEMBAR! Bidak terlempar ke Penjara!");
+        p.setPosition(GameConstants::JAIL_POSITION);
+        p.setStatus(PlayerStatus::IN_JAIL);
+        addLog("PENJARA", "3x double → masuk penjara", p.getName());
+        return;
+      }
+    }
+
+    if (board.empty()) {
+      ui.showMessage("CRITICAL ERROR: Board kosong.");
+      return;
+    }
+
+    int prevPos = p.getPosition();
+    p.move(rollTotal, static_cast<int>(board.size()));
+    ui.showMessage("Memajukan Bidak " + p.getName() + " sebanyak " +
+                   std::to_string(rollTotal) + " petak...");
+
+    if (p.getPosition() < prevPos) {
+      p.addMoney(GameConstants::GO_BONUS);
+      ui.showMessage("[!] Melewati GO! Mendapat bonus " +
+                     formatUang(GameConstants::GO_BONUS) + ".");
+      addLog("GO", "Melewati GO, dapat " + formatUang(GameConstants::GO_BONUS),
+             p.getName());
+    }
+
+    Petak *cur = board[p.getPosition()].get();
+    ui.showMessage("Bidak mendarat di: " + cur->getName() + ".\n");
+    cur->injak(p, ui, rollTotal, &board, &players);
+
+    if (auto *prop = dynamic_cast<PetakProperti *>(cur)) {
+      std::string kode = prop->getShortName();
+
+      if (prop->getOwner() == nullptr) {
+        if (auto *street = dynamic_cast<Street *>(prop)) {
+          (void)street;
+
+          bool wantBuy = comAI.shouldBuyProperty(p, prop);
+
+          if (wantBuy && p.getMoney() >= prop->getHargaBeli()) {
+            ComPlayerAI::logDecision(
+                p, ui,
+                "Membeli " + prop->getName() + " (" + kode + ") seharga " +
+                    formatUang(prop->getHargaBeli()),
+                "saldo cukup, keputusan beli");
+            p.reduceMoney(prop->getHargaBeli());
+            prop->setOwner(&p);
+            p.addProperty(prop);
+            ui.showMessage(prop->getName() + " kini menjadi milik " +
+                           p.getName() + "!");
+            ui.showMessage("Uang tersisa: " + formatUang(p.getMoney()));
+            addLog("BELI",
+                   "Beli " + prop->getName() + " (" + kode + ") seharga " +
+                       formatUang(prop->getHargaBeli()),
+                   p.getName());
+          } else if (!wantBuy || p.getMoney() < prop->getHargaBeli()) {
+            ComPlayerAI::logDecision(p, ui,
+                                     "Tidak membeli " + prop->getName(),
+                                     "melewati ke lelang");
+            ui.showMessage("Properti ini akan masuk ke sistem lelang...");
+            AuctionManager::startAuction(prop, &p, players, ui);
+          }
+
+        } else if (dynamic_cast<Railroad *>(prop)) {
+
+          prop->setOwner(&p);
+          p.addProperty(prop);
+          ComPlayerAI::logDecision(p, ui,
+                                   "Mendapat stasiun " + prop->getName(),
+                                   "otomatis");
+          addLog("RAILROAD",
+                 prop->getName() + " (" + kode + ") kini milik " +
+                     p.getName() + " (otomatis)",
+                 p.getName());
+
+        } else if (dynamic_cast<Utility *>(prop)) {
+
+          prop->setOwner(&p);
+          p.addProperty(prop);
+          ComPlayerAI::logDecision(p, ui,
+                                   "Mendapat utilitas " + prop->getName(),
+                                   "otomatis");
+          addLog("UTILITY",
+                 prop->getName() + " (" + kode + ") kini milik " +
+                     p.getName() + " (otomatis)",
+                 p.getName());
+        }
+
+      } else if (prop->getOwner() != &p && !prop->getIsMortgaged()) {
+        int rent = prop->getSewa(rollTotal);
+        addLog("SEWA",
+               "Bayar " + formatUang(rent) + " ke " +
+                   prop->getOwner()->getName() + " (" + kode + ")",
+               p.getName());
+      }
+
+    } else if (auto *aksi = dynamic_cast<PetakAksi *>(cur)) {
+      const std::string &aname = aksi->getName();
+
+      if (aname == "Kesempatan" || aname == "Chance") {
+        ui.showMessage("Kamu mendarat di Petak Kesempatan!");
+        ui.showMessage("Mengambil kartu...");
+        if (!chanceDeck.isEmpty()) {
+          auto drawn = chanceDeck.drawCard();
+          ui.showMessage("Kartu: \"" + drawn->getDescription() + "\"");
+          addLog("KARTU", "Kesempatan: " + drawn->getDescription(),
+                 p.getName());
+          drawn->applyEffect(p, ui, &board, &players);
+          chanceDeck.returnCard(std::move(drawn));
+        }
+      } else if (aname == "Dana_Umum" || aname == "Dana Umum" ||
+                 aname == "Community Chest") {
+        ui.showMessage("Kamu mendarat di Petak Dana Umum!");
+        ui.showMessage("Mengambil kartu...");
+        if (!chestDeck.isEmpty()) {
+          auto drawn = chestDeck.drawCard();
+          ui.showMessage("Kartu: \"" + drawn->getDescription() + "\"");
+          addLog("KARTU", "Dana Umum: " + drawn->getDescription(),
+                 p.getName());
+          drawn->applyEffect(p, ui, &board, &players);
+          chestDeck.returnCard(std::move(drawn));
+        }
+      } else if (aksi->getType() == ActionType::FESTIVAL) {
+        addLog("FESTIVAL", "Mendarat di Festival", p.getName());
+      }
+    }
+
+    if (p.getStatus() == PlayerStatus::BANKRUPT) {
+      addLog("BANGKRUT", "", p.getName());
+      return;
+    }
+
+    if (!isDouble)
+      endTurnFlag = true;
+    else
+      ComPlayerAI::logDecision(p, ui, "Dapat double! Lempar dadu lagi...");
   }
 }

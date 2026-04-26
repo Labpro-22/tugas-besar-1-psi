@@ -8,6 +8,8 @@
 #include "utils/GameConstants.hpp"
 #include "views/IGameUI.hpp"
 
+#include <string>
+
 PetakAksi::PetakAksi(int id, const std::string &name, ActionType type,
                      int amount)
     : Petak(id, name), type(type), amount(amount) {}
@@ -18,7 +20,7 @@ int PetakAksi::getAmount() const { return amount; }
 
 #include "core/PaymentManager.hpp"
 
-void PetakAksi::injak(Player &p, IGameUI &ui, int /*diceRoll*/, std::vector<std::unique_ptr<Petak>>* board, std::vector<Player>* players) {
+void PetakAksi::injak(Player &p, IGameUI &ui, int , std::vector<std::unique_ptr<Petak>>* board, std::vector<Player>* players) {
   switch (type) {
   case ActionType::GO:
     p.addMoney(amount > 0 ? amount : 200);
@@ -27,7 +29,7 @@ void PetakAksi::injak(Player &p, IGameUI &ui, int /*diceRoll*/, std::vector<std:
     p.setStatus(PlayerStatus::IN_JAIL);
     p.setPosition(GameConstants::JAIL_POSITION);
     break;
-  //FITUR 8: PAJAK
+
   case ActionType::TAX_FLAT: {
     ui.showMessage("Kamu mendarat di Pajak Penghasilan (PPH)!");
 
@@ -38,7 +40,18 @@ void PetakAksi::injak(Player &p, IGameUI &ui, int /*diceRoll*/, std::vector<std:
     int totalKekayaan = cash + totalPropValue;
     int pajak10 = totalKekayaan / 10;
 
-    int pilihan = ui.promptTaxChoice(amount, pajak10, totalKekayaan);
+    int pilihan;
+    if (p.isComPlayer()) {
+
+      pilihan = (amount <= pajak10) ? 1 : 2;
+      ui.showMessage("[COM " + p.getName() + "] Memilih opsi pajak " +
+                     std::to_string(pilihan) + " (" +
+                     (pilihan == 1 ? "flat " + formatUang(amount)
+                                   : "10% = " + formatUang(pajak10)) +
+                     ") — otomatis pilih yang lebih murah");
+    } else {
+      pilihan = ui.promptTaxChoice(amount, pajak10, totalKekayaan);
+    }
 
     if (pilihan == 1) {
       if (board && players) {
@@ -78,7 +91,6 @@ void PetakAksi::injak(Player &p, IGameUI &ui, int /*diceRoll*/, std::vector<std:
   case ActionType::FESTIVAL: {
     ui.showMessage("Kamu mendarat di petak Festival!");
 
-    // Kumpulkan Street milik pemain yang tidak tergadai
     std::vector<Street *> pilihanStreet;
     for (auto *prop : p.getOwnedProperties()) {
       if (auto *s = dynamic_cast<Street *>(prop)) {
@@ -93,13 +105,47 @@ void PetakAksi::injak(Player &p, IGameUI &ui, int /*diceRoll*/, std::vector<std:
       break;
     }
 
+    if (p.isComPlayer()) {
+      Street *best = pilihanStreet[0];
+      int bestRent = best->getSewa();
+      for (size_t i = 1; i < pilihanStreet.size(); ++i) {
+        if (pilihanStreet[i]->getSewa() > bestRent) {
+          bestRent = pilihanStreet[i]->getSewa();
+          best = pilihanStreet[i];
+        }
+      }
+      ui.showMessage("[COM " + p.getName() + "] Memilih properti festival: " +
+                     best->getShortName() + " (" + best->getName() +
+                     ") — sewa tertinggi");
+
+      int prevMult = best->getFestivalMultiplier();
+      int prevRent = best->getSewa();
+      best->activateFestival();
+      int newRent = best->getSewa();
+
+      if (prevMult >= 8) {
+        ui.showMessage("Efek sudah maksimum (harga sewa sudah digandakan tiga kali)");
+        ui.showMessage("Durasi di-reset menjadi: 3 giliran");
+      } else if (prevMult > 1) {
+        ui.showMessage("Efek diperkuat!");
+        ui.showMessage("Sewa sebelumnya: " + formatUang(prevRent));
+        ui.showMessage("Sewa sekarang: " + formatUang(newRent));
+        ui.showMessage("Durasi di-reset menjadi: 3 giliran");
+      } else {
+        ui.showMessage("Efek festival aktif!");
+        ui.showMessage("Sewa awal: " + formatUang(prevRent));
+        ui.showMessage("Sewa sekarang: " + formatUang(newRent));
+        ui.showMessage("Durasi: 3 giliran");
+      }
+      break;
+    }
+
     ui.showMessage("Daftar properti milikmu:");
     for (auto *s : pilihanStreet)
       ui.showMessage("- " + s->getShortName() + " (" + s->getName() + ")");
     while (true) {
       std::string kode = ui.promptInput("Masukkan kode properti: ");
 
-      // Cari di properti milik pemain
       Street *chosen = nullptr;
       bool milikTapiRailroadUtility = false;
       for (auto *prop : p.getOwnedProperties()) {
@@ -121,10 +167,10 @@ void PetakAksi::injak(Player &p, IGameUI &ui, int /*diceRoll*/, std::vector<std:
       }
 
       int prevMult = chosen->getFestivalMultiplier();
-      int prevRent = chosen->getSewa(); // sewa sebelum aktivasi
+      int prevRent = chosen->getSewa();
 
       chosen->activateFestival();
-      int newRent = chosen->getSewa(); // sewa setelah aktivasi
+      int newRent = chosen->getSewa();
 
       if (prevMult >= 8) {
         ui.showMessage(

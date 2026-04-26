@@ -64,8 +64,8 @@ void PaymentManager::processPayment(Player &debtor, Player *creditor, int amount
         }
         potential += sellValue;
         sellable.push_back(prop);
-        
-        potential += prop->getHargaBeli() / 2; 
+
+        potential += prop->getHargaBeli() / 2;
         mortgageable.push_back(prop);
       }
     }
@@ -90,10 +90,10 @@ void PaymentManager::processPayment(Player &debtor, Player *creditor, int amount
       ui.showMessage("Kamu wajib melikuidasi aset untuk membayar.");
       ui.showMessage("=== Panel Likuidasi ===");
       ui.showMessage("Uang kamu saat ini: " + formatUang(debtor.getMoney()) + " | Kewajiban: " + formatUang(amount));
-      
+
       int index = 1;
       std::vector<std::pair<int, PetakProperti*>> options;
-      
+
       ui.showMessage("[Jual ke Bank]");
       for (auto* prop : sellable) {
           int sellValue = prop->getHargaBeli();
@@ -107,18 +107,27 @@ void PaymentManager::processPayment(Player &debtor, Player *creditor, int amount
           options.push_back({1, prop});
           index++;
       }
-      
+
       ui.showMessage("[Gadaikan]");
       for (auto* prop : mortgageable) {
           ui.showMessage(std::to_string(index) + ". " + prop->getName() + " (" + prop->getShortName() + ") Nilai Gadai: " + formatUang(prop->getHargaBeli() / 2));
           options.push_back({2, prop});
           index++;
       }
-      
-      std::string choiceStr = ui.promptInput("Pilih aksi (0 jika sudah cukup): ");
+
       int choice = 0;
-      try { choice = std::stoi(choiceStr); } catch (...) {}
-      
+
+      if (debtor.isComPlayer()) {
+        if (!options.empty()) {
+          choice = 1;
+          ui.showMessage("[COM " + debtor.getName() + "] Otomatis melikuidasi aset #" +
+                         std::to_string(choice) + " (" + options[0].second->getName() + ")");
+        }
+      } else {
+        std::string choiceStr = ui.promptInput("Pilih aksi (0 jika sudah cukup): ");
+        try { choice = std::stoi(choiceStr); } catch (...) {}
+      }
+
       if (choice == 0) {
           if (debtor.getMoney() >= amount) {
               break;
@@ -129,7 +138,7 @@ void PaymentManager::processPayment(Player &debtor, Player *creditor, int amount
           auto opt = options[choice - 1];
           int actionType = opt.first;
           PetakProperti* prop = opt.second;
-          
+
           if (actionType == 1) {
               int sellValue = prop->getHargaBeli();
               if (auto *street = dynamic_cast<Street*>(prop)) {
@@ -137,17 +146,17 @@ void PaymentManager::processPayment(Player &debtor, Player *creditor, int amount
                   street->demolishAllBuildings();
               }
               debtor.addMoney(sellValue);
-              
+
               debtor.removeProperty(prop);
               prop->lelang();
-              
+
               ui.showMessage(prop->getName() + " terjual ke Bank. Kamu menerima " + formatUang(sellValue) + ".");
           } else if (actionType == 2) {
               prop->gadai();
               debtor.addMoney(prop->getHargaBeli() / 2);
               ui.showMessage(prop->getName() + " digadaikan. Kamu menerima " + formatUang(prop->getHargaBeli() / 2) + ".");
           }
-          
+
       } else {
           ui.showMessage("Pilihan tidak valid.");
       }
@@ -156,14 +165,14 @@ void PaymentManager::processPayment(Player &debtor, Player *creditor, int amount
       ui.showMessage("Tidak cukup untuk menutup kewajiban " + formatUang(amount) + ".");
       ui.showMessage(debtor.getName() + " dinyatakan BANGKRUT!");
       ui.showMessage("Kreditor: " + std::string(creditor ? creditor->getName() : "Bank"));
-      
+
       debtor.setStatus(PlayerStatus::BANKRUPT);
-      
+
       if (creditor) {
           ui.showMessage("Pengalihan aset ke " + creditor->getName() + ":");
           ui.showMessage("- Uang tunai sisa : " + formatUang(debtor.getMoney()));
           creditor->addMoney(debtor.getMoney());
-          
+
           for (auto* prop : debtor.getOwnedProperties()) {
               std::string status = prop->getIsMortgaged() ? "MORTGAGED [M]" : "OWNED";
               if (auto *street = dynamic_cast<Street*>(prop)) {
@@ -171,7 +180,7 @@ void PaymentManager::processPayment(Player &debtor, Player *creditor, int amount
                   else if (street->getHouseCount() > 0) status += " (" + std::to_string(street->getHouseCount()) + " rumah)";
               }
               ui.showMessage("- " + prop->getName() + " (" + prop->getShortName() + ") [" + status + "]");
-              
+
               prop->setOwner(creditor);
               creditor->addProperty(prop);
           }
@@ -181,7 +190,7 @@ void PaymentManager::processPayment(Player &debtor, Player *creditor, int amount
           ui.showMessage("Uang sisa " + formatUang(debtor.getMoney()) + " diserahkan ke Bank.");
           ui.showMessage("Seluruh properti dikembalikan ke status BANK.");
           ui.showMessage("Bangunan dihancurkan - stok dikembalikan ke Bank.");
-          
+
           std::vector<PetakProperti*> propsToAuction = debtor.getOwnedProperties();
           ui.showMessage("Properti akan dilelang satu per satu:");
           for (auto* prop : propsToAuction) {

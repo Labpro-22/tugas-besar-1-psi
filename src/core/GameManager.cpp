@@ -41,26 +41,25 @@ void GameManager::initSpecialDeck() {
 
   std::mt19937 rng(std::random_device{}());
 
-  // 4 MoveCard (langkah 1-6 acak)
   for (int i = 0; i < 4; i++) {
     int steps = std::uniform_int_distribution<int>(1, 6)(rng);
     specialDeck.push_back(std::make_unique<SpecialCard>(SpecialCardType::MOVE, steps));
   }
-  // 3 DiscountCard (diskon 10-50% acak)
+
   for (int i = 0; i < 3; i++) {
     int pct = std::uniform_int_distribution<int>(1, 5)(rng) * 10;
     specialDeck.push_back(std::make_unique<SpecialCard>(SpecialCardType::DISCOUNT, pct, 1));
   }
-  // 2 ShieldCard
+
   for (int i = 0; i < 2; i++)
     specialDeck.push_back(std::make_unique<SpecialCard>(SpecialCardType::SHIELD));
-  // 2 TeleportCard
+
   for (int i = 0; i < 2; i++)
     specialDeck.push_back(std::make_unique<SpecialCard>(SpecialCardType::TELEPORT));
-  // 2 LassoCard
+
   for (int i = 0; i < 2; i++)
     specialDeck.push_back(std::make_unique<SpecialCard>(SpecialCardType::LASSO));
-  // 2 DemolitionCard
+
   for (int i = 0; i < 2; i++)
     specialDeck.push_back(std::make_unique<SpecialCard>(SpecialCardType::DEMOLITION));
 
@@ -109,10 +108,30 @@ void GameManager::initPlayers(int numPlayers) {
   if (std::cin.peek() == '\n')
     std::cin.ignore();
 
-  for (int i = 0; i < numPlayers; ++i) {
+  int numCom = 0;
+  ui->showMessage("Berapa pemain COM (komputer)? (0-" +
+                  std::to_string(numPlayers - 1) + "): ");
+  {
+    std::string comInput;
+    std::getline(std::cin, comInput);
+    try { numCom = std::stoi(comInput); } catch (...) { numCom = 0; }
+    if (numCom < 0) numCom = 0;
+    if (numCom >= numPlayers) numCom = numPlayers - 1;
+  }
+
+  int numHuman = numPlayers - numCom;
+
+  for (int i = 0; i < numHuman; ++i) {
     std::string name = ui->promptInput("Enter name for Player " +
                                        std::to_string(i + 1) + ": ");
-    players.emplace_back(i + 1, name, GameConstants::STARTING_MONEY);
+    players.emplace_back(i + 1, name, GameConstants::STARTING_MONEY, false);
+  }
+
+  for (int i = 0; i < numCom; ++i) {
+    std::string comName = "COM_" + std::to_string(i + 1);
+    ui->showMessage("Pemain COM dibuat: " + comName);
+    players.emplace_back(numHuman + i + 1, comName,
+                         GameConstants::STARTING_MONEY, true);
   }
 }
 
@@ -211,8 +230,6 @@ void GameManager::startGame() {
   ui->showMessage("         WELCOME TO NIMONSPOLI !!!          ");
   ui->showMessage("============================================");
 
-  // cbDraw/cbDiscard menggunakan void* untuk menghindari instantiasi template
-  // complex di header — di .cpp-nya di-cast ke SpecialCard*
   auto cbSave = [this](const std::string &fn) {
     return SaveManager::saveGame(*this, fn);
   };

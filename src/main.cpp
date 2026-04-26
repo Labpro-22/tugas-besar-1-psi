@@ -33,7 +33,7 @@ int main() {
   }
 
   if (pilihan != "2") {
-    // New Game
+
     int numPlayers = 0;
     std::cout << "Masukkan jumlah pemain (2-4): ";
     std::cin >> numPlayers;

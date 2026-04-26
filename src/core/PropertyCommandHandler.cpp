@@ -70,9 +70,8 @@ bool canUpgradeAnyToHotel(const std::vector<Street *> &streets) {
   }
   return hasNonHotel;
 }
-} // namespace
+}
 
-//Fitur 4: CETAK_AKTA
 void PropertyCommandHandler::cetakAkta(
     const std::vector<std::unique_ptr<Petak>> &board, IGameUI &ui) {
 
@@ -137,7 +136,6 @@ void PropertyCommandHandler::cetakAkta(
   ui.showMessage("+================================+");
 }
 
-//Fitur 5: CETAK_PROPERTI
 void PropertyCommandHandler::cetakProperti(const std::vector<Player> &players,
                                            IGameUI &ui,
                                            const std::string &playerName) {
@@ -209,7 +207,6 @@ void PropertyCommandHandler::cetakProperti(const std::vector<Player> &players,
   ui.showMessage("Total kekayaan properti: " + formatUang(totalKekayaan));
 }
 
-//Fitur 11: BANGUN
 void PropertyCommandHandler::handleBangun(
     const std::vector<std::unique_ptr<Petak>> &board, Player &p, IGameUI &ui) {
 
@@ -382,7 +379,6 @@ void PropertyCommandHandler::handleBangun(
   }
 }
 
-//Fitur 9: GADAI
 void PropertyCommandHandler::handleGadai(
     const std::vector<std::unique_ptr<Petak>> &board, Player &p, IGameUI &ui) {
 
@@ -462,8 +458,6 @@ void PropertyCommandHandler::handleGadai(
       "Catatan: Sewa tidak dapat dipungut dari properti yang digadaikan.");
 }
 
-
-//Fitur 10: TEBUS
 void PropertyCommandHandler::handleTebus(Player &p, IGameUI &ui) {
   std::vector<PetakProperti *> tebusable;
   for (auto prop : p.getOwnedProperties()) {
@@ -479,7 +473,7 @@ void PropertyCommandHandler::handleTebus(Player &p, IGameUI &ui) {
   ui.showMessage("=== Properti yang Sedang Digadaikan ===");
   for (size_t i = 0; i < tebusable.size(); i++) {
     PetakProperti *prop = tebusable[i];
-    std::string groupName = prop->getGroupName(); // virtual — no cast
+    std::string groupName = prop->getGroupName();
     int hargaTebus = prop->getHargaBeli();
     ui.showMessage(std::to_string(i + 1) + ". " + prop->getName() + " (" +
                    prop->getShortName() + ") [" + groupName +
