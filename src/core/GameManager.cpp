@@ -159,13 +159,65 @@ void GameManager::startGame() {
                           transactionLog);
 
   while (true) {
+    if (turnCount > maxTurn) {
+      ui->showMessage("\nPermainan selesai! (Batas giliran tercapai)\n");
+      ui->showMessage("Rekap pemain:");
+
+      std::vector<Player*> activePlayers;
+      for (auto &p : players) {
+        if (p.getStatus() != PlayerStatus::BANKRUPT) {
+          activePlayers.push_back(&p);
+        }
+      }
+
+      for (auto *p : activePlayers) {
+        ui->showMessage("");
+        ui->showMessage(p->getName());
+        ui->showMessage("Uang      : " + formatUang(p->getMoney()));
+        ui->showMessage("Properti  : " + std::to_string(p->getOwnedProperties().size()));
+        ui->showMessage("Kartu     : " + std::to_string(p->getHandSize()));
+      }
+
+      std::vector<Player*> winners;
+      for (auto *p : activePlayers) {
+        if (winners.empty()) {
+          winners.push_back(p);
+        } else {
+          Player *top = winners[0];
+          if (p->getMoney() > top->getMoney()) {
+            winners = {p};
+          } else if (p->getMoney() == top->getMoney()) {
+            if (p->getOwnedProperties().size() > top->getOwnedProperties().size()) {
+              winners = {p};
+            } else if (p->getOwnedProperties().size() == top->getOwnedProperties().size()) {
+              if (p->getHandSize() > top->getHandSize()) {
+                winners = {p};
+              } else if (p->getHandSize() == top->getHandSize()) {
+                winners.push_back(p);
+              }
+            }
+          }
+        }
+      }
+
+      ui->showMessage("");
+      std::string winMsg = "Pemenang: ";
+      for (size_t i = 0; i < winners.size(); ++i) {
+        winMsg += winners[i]->getName();
+        if (i < winners.size() - 1) winMsg += ", ";
+      }
+      ui->showMessage(winMsg);
+      break;
+    }
+
     turnCtrl.playTurn();
 
     Player *winner = checkWinner();
     if (winner) {
-      ui->showMessage("\n============================================");
-      ui->showMessage("     " + winner->getName() + " IS THE WINNER!");
-      ui->showMessage("============================================");
+      ui->showMessage("\nPermainan selesai! (Semua pemain kecuali satu bangkrut)\n");
+      ui->showMessage("Pemain tersisa:");
+      ui->showMessage("- " + winner->getName() + "\n");
+      ui->showMessage("Pemenang: " + winner->getName());
       break;
     }
     nextTurn();
