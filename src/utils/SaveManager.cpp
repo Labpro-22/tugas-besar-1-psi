@@ -5,6 +5,8 @@
 #include <fstream>
 #include <iostream>
 
+
+//Fitur 15: Simpan
 bool SaveManager::saveGame(const GameManager &gm, const std::string &filename) {
   if (std::filesystem::exists(filename)) {
     std::cout << "File " << filename << " sudah ada. Timpa file lama? (y/n): ";

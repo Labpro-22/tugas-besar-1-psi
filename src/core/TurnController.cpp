@@ -73,6 +73,8 @@ void TurnController::executePostRoll(Player &p, int roll1, int roll2,
   currentSpace->injak(p, ui, rollTotal);
 
   if (auto prop = dynamic_cast<PetakProperti *>(currentSpace)) {
+
+    //FITUR 6: BELI
     if (prop->getOwner() == nullptr) {
       std::string kode = prop->getShortName();
       std::string fullColor = ColorRegistry::getFullName(prop->getColorCode());
@@ -143,6 +145,8 @@ void TurnController::executePostRoll(Player &p, int roll1, int roll2,
                        prop->getName() + " kini menjadi milikmu!");
       }
     }
+
+
   } else if (auto aksi = dynamic_cast<PetakAksi *>(currentSpace)) {
     const std::string &name = aksi->getName();
     if (name == "Chance" || name == "Kesempatan") {
@@ -201,6 +205,7 @@ void TurnController::playTurn() {
   while (!endTurnFlag) {
     std::string command = ui.promptInput("> Masukkan perintah: ");
 
+    //FITUR 1: CETAK_PAPAN
     if (command == "CETAK_PAPAN") {
       BoardView::printBoard(board, players, turnCount);
       continue;
@@ -210,6 +215,7 @@ void TurnController::playTurn() {
     std::string action;
     ss >> action;
 
+    //FITUR 2: Lempar Dadu
     if (action == "LEMPAR_DADU" || command.empty()) {
       hasDoneAction = true;
       ui.showMessage("Mengocok dadu...");
@@ -252,6 +258,8 @@ void TurnController::playTurn() {
         else
           ui.showMessage("[!] Gagal menyimpan permainan.");
       }
+
+      //FITUR 3: ATUR DADU
     } else if (action == "ATUR_DADU") {
       hasDoneAction = true;
       int x, y;

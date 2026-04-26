@@ -59,6 +59,7 @@ void PetakProperti::injak(Player &p, IGameUI &ui, int diceRoll) {
       ui.showMessage("Kondisi     : " + kondisi);
       ui.showMessage("Sewa        : " + formatUang(rent) + "\n");
 
+      //FITUR 7: BAYAR SEWA
       if (p.getMoney() >= rent) {
         int pMoneyBefore = p.getMoney();
         int oMoneyBefore = owner->getMoney();

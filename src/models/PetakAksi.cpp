@@ -25,6 +25,7 @@ void PetakAksi::injak(Player &p, IGameUI &ui, int /*diceRoll*/) {
     p.setStatus(PlayerStatus::IN_JAIL);
     p.setPosition(GameConstants::JAIL_POSITION);
     break;
+  //FITUR 8: PAJAK
   case ActionType::TAX_FLAT: {
     ui.showMessage("Kamu mendarat di Pajak Penghasilan (PPH)!");
 

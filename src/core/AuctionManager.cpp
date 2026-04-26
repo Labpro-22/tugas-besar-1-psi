@@ -5,6 +5,7 @@
 #include "views/IGameUI.hpp"
 #include <sstream>
 
+//Fitur 12: LELANG
 void AuctionManager::startAuction(PetakProperti *prop, Player *initiator,
                                   std::vector<Player> &allPlayers,
                                   IGameUI &ui) {
