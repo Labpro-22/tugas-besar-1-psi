@@ -42,4 +42,27 @@ public:
   void applyEffect(Player &p) override;
 };
 
+enum class SpecialCardType {
+  MOVE, DISCOUNT, SHIELD, TELEPORT, LASSO, DEMOLITION
+};
+
+class SpecialCard {
+private:
+  SpecialCardType cardType;
+  int value;// langkah (MOVE) atau persen diskon (DISCOUNT)
+  int duration; // sisa durasi berlaku (hanya DISCOUNT)
+
+public:
+  SpecialCard(SpecialCardType type, int value = 0, int duration = 0);
+
+  SpecialCardType getType()     const;
+  int             getValue()    const;
+  int             getDuration() const;
+  void            setDuration(int d);
+  void            decrementDuration();
+
+  std::string getTypeName()    const;
+  std::string getDescription() const;
+};
+
 #endif

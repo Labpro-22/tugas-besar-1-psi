@@ -57,3 +57,19 @@ int Player::getUtilityCount() const {
   }
   return count;
 }
+
+void Player::addSpecialCard(std::unique_ptr<SpecialCard> card) {
+  hand.push_back(std::move(card));
+}
+
+void Player::removeSpecialCard(int index) {
+  if (index >= 0 && index < static_cast<int>(hand.size()))
+    hand.erase(hand.begin() + index);
+}
+
+const std::vector<std::unique_ptr<SpecialCard>> &Player::getHand() const {
+  return hand;
+}
+
+int  Player::getHandSize() const { return static_cast<int>(hand.size()); }
+bool Player::isHandFull()  const { return static_cast<int>(hand.size()) >= 3; }
