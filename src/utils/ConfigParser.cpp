@@ -21,13 +21,13 @@ ConfigParser::loadBoardConfig(const std::string &filename) {
   setAksi(0, "GO", "GO", ActionType::GO, 200);
   setAksi(2, "Dana Umum", "DNU", ActionType::FREE_PARKING);
   setAksi(4, "Pajak Penghasilan", "PPH", ActionType::TAX_FLAT, 150);
-  setAksi(7, "Festival", "FES", ActionType::FREE_PARKING);
+  setAksi(7, "Festival", "FES", ActionType::FESTIVAL);
   setAksi(10, "Penjara", "PEN", ActionType::FREE_PARKING);
   setAksi(17, "Dana Umum", "DNU", ActionType::FREE_PARKING);
   setAksi(20, "Bebas Parkir", "BBP", ActionType::FREE_PARKING);
   setAksi(22, "Kesempatan", "KSP", ActionType::FREE_PARKING);
   setAksi(30, "Petak Pergi ke Penjara", "PPJ", ActionType::JAIL);
-  setAksi(33, "Festival", "FES", ActionType::FREE_PARKING);
+  setAksi(33, "Festival", "FES", ActionType::FESTIVAL);
   setAksi(36, "Kesempatan", "KSP", ActionType::FREE_PARKING);
   setAksi(38, "Pajak Barang Mewah", "PBM", ActionType::TAX_FIXED, 150);
 

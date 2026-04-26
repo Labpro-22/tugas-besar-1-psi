@@ -3,7 +3,7 @@
 
 #include "models/Petak.hpp"
 
-enum class ActionType { GO, JAIL, TAX_FLAT, TAX_FIXED, FREE_PARKING };
+enum class ActionType { GO, JAIL, TAX_FLAT, TAX_FIXED, FREE_PARKING, FESTIVAL };
 
 class PetakAksi : public Petak {
 private:

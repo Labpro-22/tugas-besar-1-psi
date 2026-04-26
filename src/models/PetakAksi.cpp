@@ -92,5 +92,75 @@ void PetakAksi::injak(Player &p, IGameUI &ui, int /*diceRoll*/) {
   }
   case ActionType::FREE_PARKING:
     break;
+  case ActionType::FESTIVAL: {
+    ui.showMessage("Kamu mendarat di petak Festival!");
+
+    // Kumpulkan Street milik pemain yang tidak tergadai
+    std::vector<Street *> pilihanStreet;
+    for (auto *prop : p.getOwnedProperties()) {
+      if (auto *s = dynamic_cast<Street *>(prop)) {
+        if (!s->getIsMortgaged())
+          pilihanStreet.push_back(s);
+      }
+    }
+
+    if (pilihanStreet.empty()) {
+      ui.showMessage(
+          "Kamu tidak memiliki properti Street yang dapat dipilih.");
+      break;
+    }
+
+    ui.showMessage("Daftar properti milikmu:");
+    for (auto *s : pilihanStreet)
+      ui.showMessage("- " + s->getShortName() + " (" + s->getName() + ")");
+    while (true) {
+      std::string kode = ui.promptInput("Masukkan kode properti: ");
+
+      // Cari di properti milik pemain
+      Street *chosen = nullptr;
+      bool milikTapiRailroadUtility = false;
+      for (auto *prop : p.getOwnedProperties()) {
+        if (prop->getShortName() == kode) {
+          chosen = dynamic_cast<Street *>(prop);
+          if (!chosen)
+            milikTapiRailroadUtility = true;
+          break;
+        }
+      }
+
+      if (milikTapiRailroadUtility) {
+        ui.showMessage("-> Properti ini tidak dapat diaktifkan festival!");
+        continue;
+      }
+      if (!chosen) {
+        ui.showMessage("-> Kode properti tidak valid atau bukan milikmu!");
+        continue;
+      }
+
+      int prevMult = chosen->getFestivalMultiplier();
+      int prevRent = chosen->getSewa(); // sewa sebelum aktivasi
+
+      chosen->activateFestival();
+      int newRent = chosen->getSewa(); // sewa setelah aktivasi
+
+      if (prevMult >= 8) {
+        ui.showMessage(
+            "Efek sudah maksimum (harga sewa sudah digandakan tiga kali)");
+        ui.showMessage("Durasi di-reset menjadi: 3 giliran");
+      } else if (prevMult > 1) {
+        ui.showMessage("Efek diperkuat!");
+        ui.showMessage("Sewa sebelumnya: " + formatUang(prevRent));
+        ui.showMessage("Sewa sekarang: " + formatUang(newRent));
+        ui.showMessage("Durasi di-reset menjadi: 3 giliran");
+      } else {
+        ui.showMessage("Efek festival aktif!");
+        ui.showMessage("Sewa awal: " + formatUang(prevRent));
+        ui.showMessage("Sewa sekarang: " + formatUang(newRent));
+        ui.showMessage("Durasi: 3 giliran");
+      }
+      break;
+    }
+    break;
+  }
   }
 }

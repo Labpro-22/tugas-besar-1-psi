@@ -1,6 +1,7 @@
 #ifndef PLAYER_HPP
 #define PLAYER_HPP
 
+#include "models/Card.hpp"
 #include <memory>
 #include <string>
 #include <vector>
@@ -18,11 +19,13 @@ private:
   PlayerStatus status;
 
   std::vector<PetakProperti *> ownedProperties;
+  std::vector<std::unique_ptr<SpecialCard>> hand; // maksimal 3 kartu
 
 public:
   Player(int id, const std::string &name, int startingMoney = 1500);
   ~Player() = default;
-
+  Player(Player&&) noexcept = default;
+  Player& operator=(Player&&) noexcept = default;
   int getId() const;
   std::string getName() const;
 
@@ -42,6 +45,12 @@ public:
 
   int getRailroadCount() const;
   int getUtilityCount() const;
+
+  void addSpecialCard(std::unique_ptr<SpecialCard> card);
+  void removeSpecialCard(int index); // 0-based
+  const std::vector<std::unique_ptr<SpecialCard>> &getHand() const;
+  int  getHandSize() const;
+  bool isHandFull()  const;
 };
 
 #endif
