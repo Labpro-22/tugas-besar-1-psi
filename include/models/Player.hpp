@@ -19,7 +19,7 @@ private:
   PlayerStatus status;
 
   std::vector<PetakProperti *> ownedProperties;
-  std::vector<std::unique_ptr<SpecialCard>> hand; // maksimal 3 kartu
+  std::vector<std::unique_ptr<SpecialCard>> hand;
 
 public:
   Player(int id, const std::string &name, int startingMoney = 1500);
@@ -41,13 +41,15 @@ public:
   void setStatus(PlayerStatus newStatus);
 
   void addProperty(PetakProperti *property);
+  void removeProperty(PetakProperti *property);
+  void clearProperties();
   const std::vector<PetakProperti *> &getOwnedProperties() const;
 
   int getRailroadCount() const;
   int getUtilityCount() const;
 
   void addSpecialCard(std::unique_ptr<SpecialCard> card);
-  void removeSpecialCard(int index); // 0-based
+  void removeSpecialCard(int index);
   const std::vector<std::unique_ptr<SpecialCard>> &getHand() const;
   int  getHandSize() const;
   bool isHandFull()  const;

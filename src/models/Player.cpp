@@ -1,6 +1,7 @@
 #include "models/Player.hpp"
 #include "models/Railroad.hpp"
 #include "models/Utility.hpp"
+#include <algorithm>
 
 Player::Player(int id, const std::string &name, int startingMoney)
     : id(id), name(name), money(startingMoney), position(0),
@@ -34,6 +35,16 @@ void Player::setStatus(PlayerStatus newStatus) { status = newStatus; }
 
 void Player::addProperty(PetakProperti *property) {
   ownedProperties.push_back(property);
+}
+
+void Player::removeProperty(PetakProperti *property) {
+  ownedProperties.erase(
+      std::remove(ownedProperties.begin(), ownedProperties.end(), property),
+      ownedProperties.end());
+}
+
+void Player::clearProperties() {
+  ownedProperties.clear();
 }
 
 const std::vector<PetakProperti *> &Player::getOwnedProperties() const {

@@ -9,22 +9,28 @@ std::string Card::getDescription() const { return description; }
 MoneyCard::MoneyCard(const std::string &desc, int amount)
     : Card(desc), amount(amount) {}
 
-void MoneyCard::applyEffect(Player &p) {
+#include "core/PaymentManager.hpp"
+
+void MoneyCard::applyEffect(Player &p, IGameUI &ui, std::vector<std::unique_ptr<Petak>>* board, std::vector<Player>* players) {
   if (amount > 0) {
     p.addMoney(amount);
   } else {
-    p.reduceMoney(-amount);
+    if (board && players) {
+        PaymentManager::processPayment(p, nullptr, -amount, ui, *board, *players, "");
+    } else {
+        p.reduceMoney(-amount);
+    }
   }
 }
 
 MoveCard::MoveCard(const std::string &desc, int targetPosition)
     : Card(desc), targetPosition(targetPosition) {}
 
-void MoveCard::applyEffect(Player &p) { p.setPosition(targetPosition); }
+void MoveCard::applyEffect(Player &p, IGameUI &ui, std::vector<std::unique_ptr<Petak>>* board, std::vector<Player>* players) { p.setPosition(targetPosition); }
 
 JailCard::JailCard(const std::string &desc) : Card(desc) {}
 
-void JailCard::applyEffect(Player &p) {
+void JailCard::applyEffect(Player &p, IGameUI &ui, std::vector<std::unique_ptr<Petak>>* board, std::vector<Player>* players) {
   p.setPosition(GameConstants::JAIL_POSITION);
   p.setStatus(PlayerStatus::IN_JAIL);
 }

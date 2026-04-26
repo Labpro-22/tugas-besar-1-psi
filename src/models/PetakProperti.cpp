@@ -31,7 +31,9 @@ void PetakProperti::lelang() {
   isMortgaged = false;
 }
 
-void PetakProperti::injak(Player &p, IGameUI &ui, int diceRoll) {
+#include "core/PaymentManager.hpp"
+
+void PetakProperti::injak(Player &p, IGameUI &ui, int diceRoll, std::vector<std::unique_ptr<Petak>>* board, std::vector<Player>* players) {
   if (owner != nullptr && owner != &p) {
     ui.showMessage("Kamu mendarat di " + getName() + " (" + getShortName() +
                    "), milik " + owner->getName() + "!\n");
@@ -59,28 +61,10 @@ void PetakProperti::injak(Player &p, IGameUI &ui, int diceRoll) {
       ui.showMessage("Kondisi     : " + kondisi);
       ui.showMessage("Sewa        : " + formatUang(rent) + "\n");
 
-      //FITUR 7: BAYAR SEWA
-      if (p.getMoney() >= rent) {
-        int pMoneyBefore = p.getMoney();
-        int oMoneyBefore = owner->getMoney();
-        p.reduceMoney(rent);
-        owner->addMoney(rent);
-
-        ui.showMessage("Uang kamu       : " + formatUang(pMoneyBefore) +
-                       " -> " + formatUang(p.getMoney()));
-        ui.showMessage("Uang " + owner->getName() + " : " +
-                       formatUang(oMoneyBefore) + " -> " +
-                       formatUang(owner->getMoney()));
+      if (board && players) {
+          PaymentManager::processPayment(p, owner, rent, ui, *board, *players, "");
       } else {
-        ui.showMessage("---");
-        ui.showMessage("Kamu tidak mampu membayar sewa penuh! (" +
-                       formatUang(rent) + ")");
-        ui.showMessage("Uang kamu saat ini: " + formatUang(p.getMoney()));
-        ui.showMessage("// Alur dilanjutkan ke Kebangkrutan");
-
-        int pMoneyBefore = p.getMoney();
-        owner->addMoney(pMoneyBefore);
-        p.reduceMoney(rent);
+          ui.showMessage("Error: PaymentManager missing board/players context.");
       }
     }
   }

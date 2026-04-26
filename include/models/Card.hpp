@@ -2,8 +2,12 @@
 #define CARD_HPP
 
 #include <string>
+#include <vector>
+#include <memory>
 
 class Player;
+class IGameUI;
+class Petak;
 
 class Card {
 protected:
@@ -15,7 +19,7 @@ public:
 
   std::string getDescription() const;
 
-  virtual void applyEffect(Player &p) = 0;
+  virtual void applyEffect(Player &p, IGameUI &ui, std::vector<std::unique_ptr<Petak>>* board = nullptr, std::vector<Player>* players = nullptr) = 0;
 };
 
 class MoneyCard : public Card {
@@ -24,7 +28,7 @@ private:
 
 public:
   MoneyCard(const std::string &desc, int amount);
-  void applyEffect(Player &p) override;
+  void applyEffect(Player &p, IGameUI &ui, std::vector<std::unique_ptr<Petak>>* board = nullptr, std::vector<Player>* players = nullptr) override;
 };
 
 class MoveCard : public Card {
@@ -33,13 +37,13 @@ private:
 
 public:
   MoveCard(const std::string &desc, int targetPosition);
-  void applyEffect(Player &p) override;
+  void applyEffect(Player &p, IGameUI &ui, std::vector<std::unique_ptr<Petak>>* board = nullptr, std::vector<Player>* players = nullptr) override;
 };
 
 class JailCard : public Card {
 public:
   JailCard(const std::string &desc);
-  void applyEffect(Player &p) override;
+  void applyEffect(Player &p, IGameUI &ui, std::vector<std::unique_ptr<Petak>>* board = nullptr, std::vector<Player>* players = nullptr) override;
 };
 
 enum class SpecialCardType {
@@ -49,8 +53,8 @@ enum class SpecialCardType {
 class SpecialCard {
 private:
   SpecialCardType cardType;
-  int value;// langkah (MOVE) atau persen diskon (DISCOUNT)
-  int duration; // sisa durasi berlaku (hanya DISCOUNT)
+  int value;
+  int duration;
 
 public:
   SpecialCard(SpecialCardType type, int value = 0, int duration = 0);

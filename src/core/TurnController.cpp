@@ -197,7 +197,7 @@ void TurnController::executePostRoll(Player &p, int roll1, int roll2,
 
   Petak *cur = board[p.getPosition()].get();
   ui.showMessage("Bidak mendarat di: " + cur->getName() + ".\n");
-  cur->injak(p, ui, rollTotal);
+  cur->injak(p, ui, rollTotal, &board, &players);
 
   if (auto *prop = dynamic_cast<PetakProperti *>(cur)) {
     std::string kode = prop->getShortName();
@@ -301,7 +301,7 @@ void TurnController::executePostRoll(Player &p, int roll1, int roll2,
         auto drawn = chanceDeck.drawCard();
         ui.showMessage("Kartu: \"" + drawn->getDescription() + "\"");
         addLog("KARTU", "Kesempatan: " + drawn->getDescription(), p.getName());
-        drawn->applyEffect(p);
+        drawn->applyEffect(p, ui, &board, &players);
         chanceDeck.returnCard(std::move(drawn));
       }
     } else if (aname == "Dana_Umum" || aname == "Dana Umum" ||
@@ -312,7 +312,7 @@ void TurnController::executePostRoll(Player &p, int roll1, int roll2,
         auto drawn = chestDeck.drawCard();
         ui.showMessage("Kartu: \"" + drawn->getDescription() + "\"");
         addLog("KARTU", "Dana Umum: " + drawn->getDescription(), p.getName());
-        drawn->applyEffect(p);
+        drawn->applyEffect(p, ui, &board, &players);
         chestDeck.returnCard(std::move(drawn));
       }
     } else if (aksi->getType() == ActionType::FESTIVAL) {
@@ -320,14 +320,8 @@ void TurnController::executePostRoll(Player &p, int roll1, int roll2,
     }
   }
 
-  if (p.getMoney() < 0) {
-    p.setStatus(PlayerStatus::BANKRUPT);
-    ui.showMessage("!!! " + p.getName() + " WENT BANKRUPT !!!");
+  if (p.getStatus() == PlayerStatus::BANKRUPT) {
     addLog("BANGKRUT", "", p.getName());
-    for (auto *prop : p.getOwnedProperties()) {
-      prop->lelang();
-      AuctionManager::startAuction(prop, &p, players, ui);
-    }
     endTurnFlag = true;
     return;
   }

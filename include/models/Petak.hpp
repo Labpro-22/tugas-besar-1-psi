@@ -3,6 +3,9 @@
 
 #include <string>
 
+#include <vector>
+#include <memory>
+
 class Player;
 class IGameUI;
 
@@ -24,7 +27,7 @@ public:
   std::string getShortName() const;
   std::string getColorCode() const;
 
-  virtual void injak(Player &p, IGameUI &ui, int diceRoll = 0) = 0;
+  virtual void injak(Player &p, IGameUI &ui, int diceRoll = 0, std::vector<std::unique_ptr<Petak>>* board = nullptr, std::vector<Player>* players = nullptr) = 0;
 };
 
 #endif
