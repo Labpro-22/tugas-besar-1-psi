@@ -17,6 +17,8 @@ private:
   int money;
   int position;
   PlayerStatus status;
+  bool shieldActive;
+  int discountActive;
 
   std::vector<PetakProperti *> ownedProperties;
   std::vector<std::unique_ptr<SpecialCard>> hand;
@@ -39,6 +41,12 @@ public:
 
   PlayerStatus getStatus() const;
   void setStatus(PlayerStatus newStatus);
+
+  bool isShieldActive() const;
+  void setShieldActive(bool active);
+
+  int getDiscount() const;
+  void setDiscount(int discount);
 
   void addProperty(PetakProperti *property);
   void removeProperty(PetakProperti *property);

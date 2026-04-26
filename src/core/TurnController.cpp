@@ -85,8 +85,7 @@ void TurnController::handleDropCard(Player &p) {
   const auto &hand = p.getHand();
   int sz = static_cast<int>(hand.size());
 
-  ui.showMessage("PERINGATAN: Kamu sudah memiliki 3 kartu di tangan "
-                 "(Maksimal 3)! Kamu diwajibkan membuang 1 kartu.");
+  ui.showMessage("PERINGATAN: Kamu sudah memiliki 3 kartu di tangan (Maksimal 3)!\nKamu diwajibkan membuang 1 kartu.\n");
   ui.showMessage("Daftar Kartu Kemampuan Anda:");
   for (int i = 0; i < sz; ++i)
     ui.showMessage(std::to_string(i + 1) + ". " +
@@ -95,7 +94,7 @@ void TurnController::handleDropCard(Player &p) {
 
   while (true) {
     std::string inp = ui.promptInput(
-        "Pilih nomor kartu yang ingin dibuang (1-" +
+        "\nPilih nomor kartu yang ingin dibuang (1-" +
         std::to_string(sz) + "): ");
     int choice = 0;
     try { choice = std::stoi(inp); } catch (...) {}
@@ -117,8 +116,8 @@ void TurnController::handleDropCard(Player &p) {
     else
       delete rawDiscard;
 
-    ui.showMessage(nama + " telah dibuang. Sekarang kamu memiliki " +
-                   std::to_string(p.getHandSize()) + " kartu di tangan.");
+    ui.showMessage("\n" + nama + " telah dibuang. Sekarang kamu memiliki " +
+                   std::to_string(p.getHandSize()) + " kartu di\ntangan.");
     addLog("DROP_KARTU", "Buang " + nama, p.getName());
     break;
   }
@@ -126,6 +125,10 @@ void TurnController::handleDropCard(Player &p) {
 
 
 void TurnController::handleTurnStart(Player &p) {
+  // Reset shield and discount
+  p.setShieldActive(false);
+  p.setDiscount(0);
+
   // Kurangi durasi festival tiap Street milik pemain
   for (auto *prop : p.getOwnedProperties()) {
     if (auto *s = dynamic_cast<Street *>(prop)) {
@@ -351,6 +354,7 @@ void TurnController::playTurn() {
 
   int  doublesCount = 0;
   bool endTurnFlag  = false;
+  bool hasUsedAbility = false;
 
   while (!endTurnFlag) {
     std::string command = ui.promptInput("> Masukkan perintah: ");
@@ -359,7 +363,50 @@ void TurnController::playTurn() {
     std::string action;
     ss >> action;
 
-    if (action == "CETAK_PAPAN") {
+    if (action == "GUNAKAN_KEMAMPUAN") {
+      if (hasDoneAction) {
+        ui.showMessage("Kartu kemampuan hanya bisa digunakan SEBELUM melempar dadu.");
+      } else if (hasUsedAbility) {
+        ui.showMessage("Kamu sudah menggunakan kartu kemampuan pada giliran ini!\nPenggunaan kartu dibatasi maksimal 1 kali dalam 1 giliran.");
+      } else {
+        const auto &hand = p.getHand();
+        if (hand.empty()) {
+          ui.showMessage("Kamu tidak memiliki kartu kemampuan spesial.");
+        } else {
+          ui.showMessage("Daftar Kartu Kemampuan Spesial Anda:");
+          for (size_t i = 0; i < hand.size(); ++i) {
+            ui.showMessage(std::to_string(i + 1) + ". " + hand[i]->getTypeName() + " - " + hand[i]->getDescription());
+          }
+          ui.showMessage("0. Batal");
+          
+          std::string choiceStr = ui.promptInput("Pilih kartu yang ingin digunakan (0-" + std::to_string(hand.size()) + "): ");
+          int choice = -1;
+          try { choice = std::stoi(choiceStr); } catch (...) {}
+          
+          if (choice == 0) {
+            // Cancelled
+          } else if (choice > 0 && choice <= (int)hand.size()) {
+            int idx = choice - 1;
+            ui.showMessage(hand[idx]->getTypeName() + " diaktifkan! " + hand[idx]->getDescription());
+            addLog("KEMAMPUAN", "Gunakan " + hand[idx]->getTypeName(), p.getName());
+            
+            hand[idx]->applyEffect(p, ui, &board, &players);
+            
+            SpecialCard *rawDiscard = new SpecialCard(hand[idx]->getType(), hand[idx]->getValue(), hand[idx]->getDuration());
+            p.removeSpecialCard(idx);
+            if (cbDiscard) {
+              cbDiscard(static_cast<void *>(rawDiscard));
+            } else {
+              delete rawDiscard;
+            }
+            
+            hasUsedAbility = true;
+          } else {
+            ui.showMessage("Pilihan tidak valid.");
+          }
+        }
+      }
+    } else if (action == "CETAK_PAPAN") {
       BoardView::printBoard(board, players, turnCount);
 
     } else if (action == "LEMPAR_DADU" || action.empty()) {
@@ -434,6 +481,7 @@ void TurnController::playTurn() {
       ui.showMessage("  BANGUN                 : Bangun rumah/hotel");
       ui.showMessage("  GADAI                  : Gadai properti ke Bank");
       ui.showMessage("  TEBUS                  : Tebus properti");
+      ui.showMessage("  GUNAKAN_KEMAMPUAN      : Gunakan kartu spesial");
       ui.showMessage("  SIMPAN <file>          : Simpan permainan");
       ui.showMessage("  CETAK_LOG [n]          : Cetak log (n terakhir)");
       ui.showMessage("===========================================");

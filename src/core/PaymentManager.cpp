@@ -15,6 +15,21 @@ void PaymentManager::processPayment(Player &debtor, Player *creditor, int amount
                                     std::vector<std::unique_ptr<Petak>> &board,
                                     std::vector<Player> &players,
                                     const std::string &reason) {
+  if (amount <= 0) return;
+
+  if (debtor.isShieldActive()) {
+      ui.showMessage("[SHIELD ACTIVE]: Efek ShieldCard melindungi Anda!");
+      ui.showMessage("Tagihan M" + std::to_string(amount) + " dibatalkan. Uang Anda tetap: M" + std::to_string(debtor.getMoney()) + ".");
+      return;
+  }
+
+  if (debtor.getDiscount() > 0) {
+      int discountPct = debtor.getDiscount();
+      int discountVal = (amount * discountPct) / 100;
+      ui.showMessage("[DISCOUNT ACTIVE]: Diskon " + std::to_string(discountPct) + "% memotong tagihan sebesar M" + std::to_string(discountVal) + ".");
+      amount -= discountVal;
+  }
+
   if (debtor.getMoney() >= amount) {
     int before = debtor.getMoney();
     debtor.reduceMoney(amount);

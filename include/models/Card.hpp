@@ -46,6 +46,28 @@ public:
   void applyEffect(Player &p, IGameUI &ui, std::vector<std::unique_ptr<Petak>>* board = nullptr, std::vector<Player>* players = nullptr) override;
 };
 
+class RelativeMoveCard : public Card {
+private:
+  int steps;
+public:
+  RelativeMoveCard(const std::string &desc, int steps);
+  void applyEffect(Player &p, IGameUI &ui, std::vector<std::unique_ptr<Petak>>* board = nullptr, std::vector<Player>* players = nullptr) override;
+};
+
+class NearestStationCard : public Card {
+public:
+  NearestStationCard(const std::string &desc);
+  void applyEffect(Player &p, IGameUI &ui, std::vector<std::unique_ptr<Petak>>* board = nullptr, std::vector<Player>* players = nullptr) override;
+};
+
+class TransferPlayersCard : public Card {
+private:
+  int amountPerPlayer;
+public:
+  TransferPlayersCard(const std::string &desc, int amount);
+  void applyEffect(Player &p, IGameUI &ui, std::vector<std::unique_ptr<Petak>>* board = nullptr, std::vector<Player>* players = nullptr) override;
+};
+
 enum class SpecialCardType {
   MOVE, DISCOUNT, SHIELD, TELEPORT, LASSO, DEMOLITION
 };
@@ -67,6 +89,8 @@ public:
 
   std::string getTypeName()    const;
   std::string getDescription() const;
+
+  void applyEffect(Player &p, IGameUI &ui, std::vector<std::unique_ptr<Petak>>* board = nullptr, std::vector<Player>* players = nullptr);
 };
 
 #endif

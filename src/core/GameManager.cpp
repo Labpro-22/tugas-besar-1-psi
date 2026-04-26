@@ -21,11 +21,13 @@ GameManager::GameManager()
 
   ui = std::make_unique<GameUI>();
 
-  chanceDeck.addCard(
-      std::make_unique<MoveCard>("Advance to GO (Collect 200)", 0));
-  chanceDeck.addCard(
-      std::make_unique<MoneyCard>("Bank pays you dividend of 50", 50));
-  chestDeck.addCard(std::make_unique<MoneyCard>("Doctor's fee. Pay 50", -50));
+  chanceDeck.addCard(std::make_unique<NearestStationCard>("Pergi ke stasiun terdekat."));
+  chanceDeck.addCard(std::make_unique<RelativeMoveCard>("Mundur 3 petak.", -3));
+  chanceDeck.addCard(std::make_unique<JailCard>("Masuk Penjara."));
+
+  chestDeck.addCard(std::make_unique<TransferPlayersCard>("Ini adalah hari ulang tahun Anda. Dapatkan M100 dari setiap pemain.", 100));
+  chestDeck.addCard(std::make_unique<MoneyCard>("Biaya dokter. Bayar M700.", -700));
+  chestDeck.addCard(std::make_unique<TransferPlayersCard>("Anda mau nyaleg. Bayar M200 kepada setiap pemain.", -200));
 
   chanceDeck.shuffleDeck();
   chestDeck.shuffleDeck();

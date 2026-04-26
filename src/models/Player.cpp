@@ -5,7 +5,7 @@
 
 Player::Player(int id, const std::string &name, int startingMoney)
     : id(id), name(name), money(startingMoney), position(0),
-      status(PlayerStatus::ACTIVE) {}
+      status(PlayerStatus::ACTIVE), shieldActive(false), discountActive(0) {}
 
 int Player::getId() const { return id; }
 std::string Player::getName() const { return name; }
@@ -30,8 +30,13 @@ void Player::move(int steps, int boardSize) {
 }
 
 PlayerStatus Player::getStatus() const { return status; }
-
 void Player::setStatus(PlayerStatus newStatus) { status = newStatus; }
+
+bool Player::isShieldActive() const { return shieldActive; }
+void Player::setShieldActive(bool active) { shieldActive = active; }
+
+int Player::getDiscount() const { return discountActive; }
+void Player::setDiscount(int discount) { discountActive = discount; }
 
 void Player::addProperty(PetakProperti *property) {
   ownedProperties.push_back(property);
