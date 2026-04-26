@@ -136,6 +136,76 @@ Player *GameManager::checkWinner() {
                                                                  : nullptr;
 }
 
+std::vector<Player *> GameManager::determineMaxTurnWinners() {
+  std::vector<Player *> activePlayers;
+  for (auto &p : players) {
+    if (p.getStatus() != PlayerStatus::BANKRUPT) {
+      activePlayers.push_back(&p);
+    }
+  }
+
+  if (activePlayers.empty())
+    return {};
+
+  std::sort(activePlayers.begin(), activePlayers.end(),
+            [](Player *a, Player *b) {
+              if (a->getMoney() != b->getMoney())
+                return a->getMoney() > b->getMoney();
+              if (a->getOwnedProperties().size() !=
+                  b->getOwnedProperties().size())
+                return a->getOwnedProperties().size() >
+                       b->getOwnedProperties().size();
+              return a->getHandSize() > b->getHandSize();
+            });
+
+  std::vector<Player *> winners;
+  winners.push_back(activePlayers[0]);
+  for (size_t i = 1; i < activePlayers.size(); ++i) {
+    if (activePlayers[i]->getMoney() == activePlayers[0]->getMoney() &&
+        activePlayers[i]->getOwnedProperties().size() ==
+            activePlayers[0]->getOwnedProperties().size() &&
+        activePlayers[i]->getHandSize() == activePlayers[0]->getHandSize()) {
+      winners.push_back(activePlayers[i]);
+    } else {
+      break;
+    }
+  }
+  return winners;
+}
+
+void GameManager::printVictorySummary(const std::vector<Player *> &winners,
+                                      bool isMaxTurn) {
+  ui->showMessage("\n============================================");
+  if (isMaxTurn) {
+    ui->showMessage("Permainan selesai! (Batas giliran tercapai)");
+    ui->showMessage("\nRekap pemain:");
+    for (auto &p : players) {
+      if (p.getStatus() != PlayerStatus::BANKRUPT) {
+        ui->showMessage("\n" + p.getName());
+        ui->showMessage("Uang      : M" + std::to_string(p.getMoney()));
+        ui->showMessage("Properti  : " +
+                       std::to_string(p.getOwnedProperties().size()));
+        ui->showMessage("Kartu     : " + std::to_string(p.getHandSize()));
+      }
+    }
+  } else {
+    ui->showMessage("Permainan selesai! (Semua pemain kecuali satu bangkrut)");
+    ui->showMessage("\nPemain tersisa:");
+    for (auto *w : winners) {
+      ui->showMessage("- " + w->getName());
+    }
+  }
+
+  std::string winnerList;
+  for (size_t i = 0; i < winners.size(); ++i) {
+    winnerList += winners[i]->getName();
+    if (i < winners.size() - 1)
+      winnerList += ", ";
+  }
+  ui->showMessage("\nPemenang: " + winnerList);
+  ui->showMessage("============================================");
+}
+
 void GameManager::startGame() {
   ui->showMessage("\n============================================");
   ui->showMessage("         WELCOME TO NIMONSPOLI !!!          ");
@@ -165,11 +235,16 @@ void GameManager::startGame() {
 
     Player *winner = checkWinner();
     if (winner) {
-      ui->showMessage("\n============================================");
-      ui->showMessage("     " + winner->getName() + " IS THE WINNER!");
-      ui->showMessage("============================================");
+      printVictorySummary({winner}, false);
       break;
     }
+
     nextTurn();
+
+    if (maxTurn > 0 && turnCount > maxTurn) {
+      std::vector<Player *> winners = determineMaxTurnWinners();
+      printVictorySummary(winners, true);
+      break;
+    }
   }
 }

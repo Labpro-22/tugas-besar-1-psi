@@ -43,6 +43,8 @@ public:
   void startGame();
   void nextTurn();
   Player *checkWinner();
+  std::vector<Player *> determineMaxTurnWinners();
+  void printVictorySummary(const std::vector<Player *> &winners, bool isMaxTurn);
 
   std::unique_ptr<SpecialCard> drawSpecialCard();
   void discardSpecialCard(std::unique_ptr<SpecialCard> card);
