@@ -100,6 +100,45 @@ const std::vector<std::string> &GameManager::getLog() const {
   return transactionLog;
 }
 
+void GameManager::setUI(std::unique_ptr<IGameUI> newUI) {
+  ui = std::move(newUI);
+}
+
+void GameManager::runInteractiveMenu() {
+  ui->showMessage("============================================");
+  ui->showMessage("         WELCOME TO NIMONSPOLI !!!          ");
+  ui->showMessage("============================================");
+  ui->showMessage("1. New Game");
+  ui->showMessage("2. Load Game (MUAT)");
+
+  std::string pilihan = ui->promptInput("Pilih (1/2): ");
+
+  if (pilihan == "2") {
+    std::string filename = ui->promptInput("Masukkan nama file save: ");
+    ui->showMessage("Memuat permainan...");
+    if (!SaveManager::loadGame(*this, filename)) {
+      ui->showMessage("Gagal memuat file! Memulai permainan baru.");
+      pilihan = "1";
+    } else {
+      ui->showMessage("Permainan berhasil dimuat.");
+      return;
+    }
+  }
+
+  if (pilihan != "2") {
+    int numPlayers = 2;
+    while (true) {
+      std::string s = ui->promptInput("Masukkan jumlah pemain (2-4): ");
+      try {
+        numPlayers = std::stoi(s);
+        if (numPlayers >= 2 && numPlayers <= 4) break;
+      } catch (...) {}
+      ui->showMessage("Jumlah pemain tidak valid, masukkan 2-4.");
+    }
+    initPlayers(numPlayers);
+  }
+}
+
 void GameManager::loadConfig(const std::string &filename) {
   board = ConfigParser::loadBoardConfig(filename);
 }

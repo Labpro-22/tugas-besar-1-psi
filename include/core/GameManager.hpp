@@ -38,6 +38,9 @@ private:
 public:
   GameManager();
 
+  void setUI(std::unique_ptr<IGameUI> newUI);
+  void runInteractiveMenu();
+
   void loadConfig(const std::string &filename);
   void initPlayers(int numPlayers);
   void startGame();

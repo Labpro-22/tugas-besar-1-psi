@@ -1,6 +1,9 @@
 # Prerequisites
 *.d
 
+# Local library dependencies (raylib, etc.) — download separately
+lib/
+
 # Compiled Object files
 *.slo
 *.lo
